@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as Separator from "@radix-ui/react-separator";
-import { FiRefreshCw, FiUserPlus } from "react-icons/fi";
+import * as Dialog from "@radix-ui/react-dialog";
+import { FiRefreshCw, FiUserPlus, FiX } from "react-icons/fi";
 import {
   createMember,
   deleteMember,
@@ -34,6 +35,7 @@ export function MembersPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const canCreateMembers = useMemo(
     () => hasPermission(session, Permissions.MEMBER_INVITE),
@@ -69,12 +71,15 @@ export function MembersPage() {
     }
   }, [notify, organizationId]);
 
-  const filterMembers = useCallback((member, query) => {
-    const lowerQuery = query.toLowerCase();
-    return (
-      member.name.toLowerCase().includes(lowerQuery) ||
-      member.email.toLowerCase().includes(lowerQuery)
-    );
+  const filterMembers = useCallback((data, query) => {
+    const search = query.trim().toLowerCase();
+
+    return data.filter((member) => {
+      const name = member.user?.name?.toLowerCase() || "";
+      const email = member.user?.email?.toLowerCase() || "";
+
+      return name.includes(search) || email.includes(search);
+    });
   }, []);
 
   async function handleCreateMember(form) {
@@ -88,6 +93,7 @@ export function MembersPage() {
         description: `${form.name} was added as ${form.role}.`,
         tone: "success",
       });
+      setIsCreateModalOpen(false);
     } catch (error) {
       notify({
         title: "Could not create member",
@@ -141,14 +147,17 @@ export function MembersPage() {
       });
     }
   }
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchMembers();
   }, [fetchMembers]);
+
   const userRole = useMemo(
     () => session?.membership?.role || Roles.VIEWER,
     [session],
   );
+
   return (
     <WorkspaceLayout onSignOut={signOut}>
       <header className="workspace-header">
@@ -156,70 +165,89 @@ export function MembersPage() {
           <h1>Organization members</h1>
           <p className="muted">Create developer/viewer accounts</p>
         </div>
-        <UserBadge session={session} />
+        <div className="header-actions">
+          {userRole === Roles.ADMIN && (
+            <Dialog.Root
+              open={isCreateModalOpen}
+              onOpenChange={setIsCreateModalOpen}
+            >
+              <Dialog.Trigger asChild>
+                <button className="primary-button" type="button">
+                  <FiUserPlus />
+                  Create member
+                </button>
+              </Dialog.Trigger>
+              <Dialog.Portal>
+                <Dialog.Overlay className="dialog-overlay" />
+                <Dialog.Content className="dialog-content">
+                  <div className="panel-heading">
+                    <div>
+                      <p className="eyebrow">Invite</p>
+                      <Dialog.Title asChild>
+                        <h2>Add a member</h2>
+                      </Dialog.Title>
+                    </div>
+                    <Dialog.Close asChild>
+                      <button
+                        className="icon-button"
+                        type="button"
+                        aria-label="Close"
+                      >
+                        <FiX />
+                      </button>
+                    </Dialog.Close>
+                  </div>
+                  <Separator.Root className="separator" />
+                  <MemberCreateForm
+                    canManageMembers={canCreateMembers}
+                    isSubmitting={isSubmitting}
+                    onCreate={handleCreateMember}
+                  />
+                </Dialog.Content>
+              </Dialog.Portal>
+            </Dialog.Root>
+          )}
+          <UserBadge session={session} />
+        </div>
       </header>
 
-      <div className="dashboard-grid">
-        {userRole === Roles.ADMIN && (
-          <section className="panel member-form-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Invite</p>
-                <h2>Add a member</h2>
-              </div>
-              <FiUserPlus />
-            </div>
-            <Separator.Root className="separator" />
-            <MemberCreateForm
-              canManageMembers={canCreateMembers}
-              isSubmitting={isSubmitting}
-              onCreate={handleCreateMember}
-            />
-          </section>
-        )}
-        <section className="panel member-list-panel">
-          <div className="panel-heading">
-            <div>
-              <p className="eyebrow">Directory</p>
-              <h2>{members.length || 0} members</h2>
-            </div>
-            <button
-              className="icon-button"
-              type="button"
-              onClick={fetchMembers}
-              aria-label="Refresh members"
-            >
-              <FiRefreshCw />
-            </button>
+      <section className="panel member-list-panel scrollbar-hide">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Directory</p>
+            <h2>{members.length || 0} members</h2>
           </div>
+          <button
+            className="icon-button"
+            type="button"
+            onClick={fetchMembers}
+            aria-label="Refresh members"
+          >
+            <FiRefreshCw />
+          </button>
+        </div>
 
-          <SearchBar
-            data={members}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            filterFn={filterMembers}
-            onFilteredData={setFilteredMembers}
-            placeholder="Search members..."
-          />
+        <SearchBar
+          data={members}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          filterFn={filterMembers}
+          onFilteredData={setFilteredMembers}
+          placeholder="Search members..."
+        />
 
-          <Separator.Root className="separator" />
-          {filteredMembers.length === 0 && (
-            <div className="p-4 text-center text-gray-500">
-              {searchQuery
-                ? "No Member match your search."
-                : "No members available. Create a new member to get started."}
-            </div>
-          )}
-          <MemberList
-            members={filteredMembers}
-            isLoading={isLoading}
-            canUpdateRoles={canUpdateRoles}
-            canDeleteMembers={canDeleteMembers}
-            onRoleChange={handleRoleChange}
-            onDeleteMember={handleDeleteMember}
-          />
-        </section>
-      </div>
+        <Separator.Root className="separator" />
+
+        <MemberList
+          members={filteredMembers}
+          isLoading={isLoading}
+          searchQuery={searchQuery}
+          canUpdateRoles={canUpdateRoles}
+          canDeleteMembers={canDeleteMembers}
+          onRoleChange={handleRoleChange}
+          onDeleteMember={handleDeleteMember}
+        />
+      </section>
     </WorkspaceLayout>
   );
 }

@@ -10,7 +10,7 @@ const SearchBar = ({
   placeholder = "Search...",
 }) => {
   useEffect(() => {
-    if (!searchQuery.trim()) {
+    if (!searchQuery?.trim()) {
       onFilteredData(data);
       return;
     }

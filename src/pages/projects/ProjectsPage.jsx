@@ -1,10 +1,11 @@
-import { use, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { WorkspaceLayout } from "../../shared/layouts/WorkspaceLayout";
 import { useAuth } from "../../shared/auth/useAuth";
 import { useToast } from "../../shared/components/useToast";
 import { UserBadge } from "../../features/members/components/UserBadge";
-import { FiRefreshCw, FiUserPlus } from "react-icons/fi";
+import { FiRefreshCw, FiPlus, FiX } from "react-icons/fi";
 import * as Separator from "@radix-ui/react-separator";
+import * as Dialog from "@radix-ui/react-dialog";
 import ProjectList from "../../features/projects/components/ProjectList";
 import ProjectCreateForm from "../../features/projects/components/ProjectCreateForm";
 import {
@@ -36,6 +37,7 @@ const ProjectsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const canCreateProject = useMemo(
     () => hasPermission(session, Permissions.PROJECT_CREATE),
@@ -87,12 +89,28 @@ const ProjectsPage = () => {
     });
   }, []);
 
+  const openCreateForm = () => {
+    setEditingProjectId(null);
+    setIsFormOpen(true);
+  };
+
+  const openEditForm = (projectId) => {
+    setEditingProjectId(projectId);
+    setIsFormOpen(true);
+  };
+
+  const closeForm = () => {
+    setIsFormOpen(false);
+    setEditingProjectId(null);
+  };
+
   const handleCreateProject = async (projectData) => {
     setIsSubmitting(true);
 
     try {
       const response = await createProject(projectData);
       await fetchProjects();
+      setIsFormOpen(false);
 
       notify({
         title: "Project created",
@@ -115,8 +133,8 @@ const ProjectsPage = () => {
 
     try {
       const response = await updateProject(projectId, updatedData);
-      setEditingProjectId(null);
       await fetchProjects();
+      closeForm();
       notify({
         title: "Project updated",
         description: response.message ?? "Project updated successfully.",
@@ -191,40 +209,72 @@ const ProjectsPage = () => {
           <p className="muted">Create and manage your projects</p>
         </div>
 
-        <UserBadge session={session} />
+        <div className="header-actions">
+          {canCreateProject && (
+            <button
+              className="primary-button"
+              type="button"
+              onClick={openCreateForm}
+            >
+              <FiPlus />
+              Create Project
+            </button>
+          )}
+
+          <UserBadge session={session} />
+        </div>
       </header>
 
-      <div className="dashboard-grid">
-        {userRole === Roles.ADMIN && (
-          <section className="panel member-form-panel">
-            <div className="panel-heading">
+      <Dialog.Root
+        open={isFormOpen}
+        onOpenChange={(open) => (open ? setIsFormOpen(true) : closeForm())}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="project-dialog-overlay" />
+          <Dialog.Content className="project-dialog-content">
+            <div className="project-dialog-header">
               <div>
                 <p className="eyebrow">
                   {editingProjectId ? "Update" : "Create"}
                 </p>
-                <h2>{editingProjectId ? "Edit project" : "Add a project"}</h2>
+                <Dialog.Title asChild>
+                  <h2>{editingProjectId ? "Edit project" : "Add a project"}</h2>
+                </Dialog.Title>
               </div>
 
-              <FiUserPlus />
+              <Dialog.Close asChild>
+                <button
+                  className="icon-button"
+                  type="button"
+                  aria-label="Close"
+                >
+                  <FiX />
+                </button>
+              </Dialog.Close>
             </div>
 
             <Separator.Root className="separator" />
 
-            <ProjectCreateForm
-              key={editingProjectId ?? "create-project"}
-              canManageProjects={canCreateProject}
-              canUpdateProjects={canUpdateProjects}
-              isSubmitting={isSubmitting}
-              isUpdate={Boolean(editingProjectId)}
-              projectId={editingProjectId}
-              onCreate={handleCreateProject}
-              onUpdate={handleProjectUpdate}
-              onCancelUpdate={() => setEditingProjectId(null)}
-              notify={notify}
-            />
-          </section>
-        )}
-        <section className="panel member-list-panel">
+            <div className="project-dialog-body">
+              <ProjectCreateForm
+                key={editingProjectId ?? "create-project"}
+                canManageProjects={canCreateProject}
+                canUpdateProjects={canUpdateProjects}
+                isSubmitting={isSubmitting}
+                isUpdate={Boolean(editingProjectId)}
+                projectId={editingProjectId}
+                onCreate={handleCreateProject}
+                onUpdate={handleProjectUpdate}
+                onCancelUpdate={closeForm}
+                notify={notify}
+              />
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <div className="">
+        <section className="panel member-list-panel full-width scrollbar-hide">
           <div className="panel-heading">
             <div>
               <p className="eyebrow">Directory</p>
@@ -263,7 +313,7 @@ const ProjectsPage = () => {
             isLoading={isLoading}
             canUpdateProjects={canUpdateProjects}
             canDeleteProjects={canDeleteProjects}
-            onProjectUpdate={setEditingProjectId}
+            onProjectUpdate={openEditForm}
             onDeleteProject={handleDeleteProject}
             onRegenerateDSN={handleRegenerateDSN}
           />

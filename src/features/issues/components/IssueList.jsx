@@ -23,7 +23,7 @@ const IssueList = ({
   }
 
   return (
-    <div className="issue-list">
+    <div className="issue-list scrollbar-hide">
       {issues.map((issue) => (
         <article
           className={`issue-row ${canReadIssue ? "clickable" : ""}`}
@@ -60,12 +60,17 @@ const IssueList = ({
               </span>
             </div>
           </div>
-          <div className="issue-actions" onClick={(event) => event.stopPropagation()}>
+          <div
+            className="issue-actions"
+            onClick={(event) => event.stopPropagation()}
+          >
             <RoleSelect
               value={issue.status ?? "unresolved"}
               options={issueStatusOptions}
               disabled={!canManageIssue}
-              onValueChange={(status) => onUpdateIssueStatus(issue.id ?? issue._id, status)}
+              onValueChange={(status) =>
+                onUpdateIssueStatus(issue.id ?? issue._id, status)
+              }
             />
           </div>
         </article>

@@ -184,9 +184,35 @@ const ProjectCreateForm = ({
         disabled={!canSubmit || isLoadingProject}
       />
 
-      <div className="form-actions">
+      {/* <div className="form-actions">
         {isUpdate ? (
           <button className="secondary-button" type="button" onClick={onCancelUpdate}>
+            <FiX />
+            Cancel
+          </button>
+        ) : null}
+        <button
+          className="primary-button"
+          type="submit"
+          disabled={!canSubmit || isSubmitting || isLoadingProject}
+        >
+          {isSubmitting || isLoadingProject ? (
+            <FiRefreshCw className="spin" />
+          ) : isUpdate ? (
+            <FiEdit2 />
+          ) : (
+            <FiPlus />
+          )}
+          {isUpdate ? "Update Project" : "Create Project"}
+        </button>
+      </div> */}
+      <div className="form-actions project-dialog-footer">
+        {isUpdate ? (
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={onCancelUpdate}
+          >
             <FiX />
             Cancel
           </button>

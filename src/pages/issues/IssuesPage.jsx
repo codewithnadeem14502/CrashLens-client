@@ -206,7 +206,7 @@ const Issues = () => {
         <UserBadge session={session} />
       </header>
       <div className="single-panel-grid">
-        <section className="panel member-list-panel">
+        <section className="panel member-list-panel scrollbar-hide">
           <div className="panel-heading">
             <div>
               <p className="eyebrow">Directory</p>

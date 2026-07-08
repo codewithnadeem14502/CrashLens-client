@@ -11,7 +11,11 @@ const ProjectList = ({
   onRegenerateDSN,
 }) => {
   return (
-    <Accordion.Root type="single" collapsible className="space-y-4">
+    <Accordion.Root
+      type="single"
+      collapsible
+      className="space-y-4 panel-table scrollbar-hide"
+    >
       {projects.map((item) => (
         <Accordion.Item
           key={item.id}
