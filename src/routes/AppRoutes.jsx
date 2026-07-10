@@ -5,6 +5,7 @@ import { useAuth } from "../shared/auth/useAuth";
 import Projects from "../pages/projects/ProjectsPage";
 import Issues from "../pages/issues/IssuesPage";
 import { IssueDetailPage } from "../pages/issues/IssueDetailPage";
+import PerformancePage from "../pages/performance/PerformancePage";
 
 export function AppRoutes() {
   const { isAuthenticated } = useAuth();
@@ -45,6 +46,12 @@ export function AppRoutes() {
           ) : (
             <Navigate to="/auth" replace />
           )
+        }
+      />
+      <Route
+        path="/workspace/performance"
+        element={
+          isAuthenticated ? <PerformancePage /> : <Navigate to="/auth" replace />
         }
       />
       <Route path="*" element={<Navigate to={homePath} replace />} />

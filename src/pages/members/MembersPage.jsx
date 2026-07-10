@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as Separator from "@radix-ui/react-separator";
 import * as Dialog from "@radix-ui/react-dialog";
-import { FiRefreshCw, FiUserPlus, FiX } from "react-icons/fi";
+import { FiUserPlus, FiX } from "react-icons/fi";
 import {
   createMember,
   deleteMember,
@@ -10,12 +10,10 @@ import {
 } from "../../features/members/api/memberService";
 import { MemberCreateForm } from "../../features/members/components/MemberCreateForm";
 import { MemberList } from "../../features/members/components/MemberList";
-import { UserBadge } from "../../features/members/components/UserBadge";
 import { getMemberId } from "../../features/members/utils/memberFormatters";
 import { getApiError } from "../../shared/api/errors";
 import {
   Permissions,
-  RolePermissions,
   Roles,
 } from "../../shared/auth/authEnums";
 import { hasPermission } from "../../shared/auth/permissions";
@@ -160,94 +158,93 @@ export function MembersPage() {
 
   return (
     <WorkspaceLayout onSignOut={signOut}>
-      <header className="workspace-header">
-        <div>
-          <h1>Organization members</h1>
-          <p className="muted">Create developer/viewer accounts</p>
-        </div>
-        <div className="header-actions">
-          {userRole === Roles.ADMIN && (
-            <Dialog.Root
-              open={isCreateModalOpen}
-              onOpenChange={setIsCreateModalOpen}
-            >
-              <Dialog.Trigger asChild>
-                <button className="primary-button" type="button">
-                  <FiUserPlus />
-                  Create member
-                </button>
-              </Dialog.Trigger>
-              <Dialog.Portal>
-                <Dialog.Overlay className="dialog-overlay" />
-                <Dialog.Content className="dialog-content">
-                  <div className="panel-heading">
-                    <div>
-                      <p className="eyebrow">Invite</p>
-                      <Dialog.Title asChild>
-                        <h2>Add a member</h2>
-                      </Dialog.Title>
-                    </div>
-                    <Dialog.Close asChild>
-                      <button
-                        className="icon-button"
-                        type="button"
-                        aria-label="Close"
-                      >
-                        <FiX />
-                      </button>
-                    </Dialog.Close>
-                  </div>
-                  <Separator.Root className="separator" />
-                  <MemberCreateForm
-                    canManageMembers={canCreateMembers}
-                    isSubmitting={isSubmitting}
-                    onCreate={handleCreateMember}
-                  />
-                </Dialog.Content>
-              </Dialog.Portal>
-            </Dialog.Root>
-          )}
-          <UserBadge session={session} />
-        </div>
-      </header>
-
-      <section className="panel member-list-panel scrollbar-hide">
-        <div className="panel-heading">
+      <main className="members-page">
+        <header className="members-header">
           <div>
-            <p className="eyebrow">Directory</p>
-            <h2>{members.length || 0} members</h2>
+            <p className="eyebrow">Members</p>
+            <h1>Organization access control</h1>
+            <p className="muted">
+              Invite teammates, review roles, and keep workspace access tidy.
+            </p>
           </div>
-          <button
-            className="icon-button"
-            type="button"
-            onClick={fetchMembers}
-            aria-label="Refresh members"
-          >
-            <FiRefreshCw />
-          </button>
-        </div>
+        </header>
 
-        <SearchBar
-          data={members}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          filterFn={filterMembers}
-          onFilteredData={setFilteredMembers}
-          placeholder="Search members..."
-        />
+        <section className="members-surface">
+          <div className="member-toolbar">
+            <SearchBar
+              data={members}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              filterFn={filterMembers}
+              onFilteredData={setFilteredMembers}
+              placeholder="Search by name or email"
+            />
+            {userRole === Roles.ADMIN && (
+              <Dialog.Root
+                open={isCreateModalOpen}
+                onOpenChange={setIsCreateModalOpen}
+              >
+                <Dialog.Trigger asChild>
+                  <button
+                    className="icon-button member-create-icon"
+                    type="button"
+                    aria-label="Create member"
+                    title="Create member"
+                  >
+                    <FiUserPlus />
+                  </button>
+                </Dialog.Trigger>
+                <Dialog.Portal>
+                  <Dialog.Overlay className="dialog-overlay" />
+                  <Dialog.Content className="dialog-content">
+                    <div className="panel-heading">
+                      <div>
+                        <p className="eyebrow">Invite</p>
+                        <Dialog.Title asChild>
+                          <h2>Add a member</h2>
+                        </Dialog.Title>
+                      </div>
+                      <Dialog.Close asChild>
+                        <button
+                          className="icon-button"
+                          type="button"
+                          aria-label="Close"
+                        >
+                          <FiX />
+                        </button>
+                      </Dialog.Close>
+                    </div>
+                    <Separator.Root className="separator" />
+                    <MemberCreateForm
+                      canManageMembers={canCreateMembers}
+                      isSubmitting={isSubmitting}
+                      onCreate={handleCreateMember}
+                    />
+                  </Dialog.Content>
+                </Dialog.Portal>
+              </Dialog.Root>
+            )}
+          </div>
 
-        <Separator.Root className="separator" />
+          <div className="members-surface-heading">
+            <div>
+              <p className="eyebrow">Directory</p>
+              <h2>{filteredMembers.length} members</h2>
+            </div>
+            <span>{isLoading ? "Loading" : `${members.length} total`}</span>
+          </div>
 
-        <MemberList
-          members={filteredMembers}
-          isLoading={isLoading}
-          searchQuery={searchQuery}
-          canUpdateRoles={canUpdateRoles}
-          canDeleteMembers={canDeleteMembers}
-          onRoleChange={handleRoleChange}
-          onDeleteMember={handleDeleteMember}
-        />
-      </section>
+          <MemberList
+            members={filteredMembers}
+            isLoading={isLoading}
+            searchQuery={searchQuery}
+            canUpdateRoles={canUpdateRoles}
+            canDeleteMembers={canDeleteMembers}
+            onRoleChange={handleRoleChange}
+            onDeleteMember={handleDeleteMember}
+          />
+        </section>
+      </main>
     </WorkspaceLayout>
   );
 }

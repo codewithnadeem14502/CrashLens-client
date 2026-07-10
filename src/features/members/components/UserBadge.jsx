@@ -1,7 +1,5 @@
 import * as Avatar from "@radix-ui/react-avatar";
 import { getInitials } from "../../../shared/utils/strings";
-import { getProject } from "../../projects/api/projectService";
-import { useEffect, useState } from "react";
 import { Roles } from "../../../shared/auth/authEnums";
 
 export function UserBadge({ session }) {

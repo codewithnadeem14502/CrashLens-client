@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { WorkspaceLayout } from "../../shared/layouts/WorkspaceLayout";
 import { useAuth } from "../../shared/auth/useAuth";
 import { useToast } from "../../shared/components/useToast";
-import { UserBadge } from "../../features/members/components/UserBadge";
 import { FiRefreshCw, FiPlus, FiX } from "react-icons/fi";
 import * as Separator from "@radix-ui/react-separator";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -15,7 +14,7 @@ import {
   regenerateDSN,
   updateProject,
 } from "../../features/projects/api/projectService";
-import { Permissions, Roles } from "../../shared/auth/authEnums";
+import { Permissions } from "../../shared/auth/authEnums";
 import { hasPermission } from "../../shared/auth/permissions";
 import { getApiError } from "../../shared/api/errors";
 import SearchBar from "../../shared/components/SearchBar";
@@ -25,11 +24,6 @@ const ProjectsPage = () => {
   const { notify } = useToast();
 
   const organizationId = session.organizationId;
-  const userRole = useMemo(
-    () => session?.membership?.role || Roles.VIEWER,
-    [session],
-  );
-
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -203,111 +197,110 @@ const ProjectsPage = () => {
 
   return (
     <WorkspaceLayout onSignOut={signOut}>
-      <header className="workspace-header">
-        <div>
-          <h1>Projects</h1>
-          <p className="muted">Create and manage your projects</p>
-        </div>
+      <main className="projects-page">
+        <header className="projects-header">
+          <div>
+            <p className="eyebrow">Projects</p>
+            <h1>Project configuration</h1>
+            <p className="muted">
+              Manage DSNs, environments, platform settings, and project access.
+            </p>
+          </div>
 
-        <div className="header-actions">
-          {canCreateProject && (
-            <button
-              className="primary-button"
-              type="button"
-              onClick={openCreateForm}
-            >
-              <FiPlus />
-              Create Project
-            </button>
-          )}
+          <div className="header-actions">
+            {canCreateProject && (
+              <button
+                className="primary-button"
+                type="button"
+                onClick={openCreateForm}
+              >
+                <FiPlus />
+                Create Project
+              </button>
+            )}
+          </div>
+        </header>
 
-          <UserBadge session={session} />
-        </div>
-      </header>
+        <Dialog.Root
+          open={isFormOpen}
+          onOpenChange={(open) => (open ? setIsFormOpen(true) : closeForm())}
+        >
+          <Dialog.Portal>
+            <Dialog.Overlay className="project-dialog-overlay" />
+            <Dialog.Content className="project-dialog-content">
+              <div className="project-dialog-header">
+                <div>
+                  <p className="eyebrow">
+                    {editingProjectId ? "Update" : "Create"}
+                  </p>
+                  <Dialog.Title asChild>
+                    <h2>
+                      {editingProjectId ? "Edit project" : "Add a project"}
+                    </h2>
+                  </Dialog.Title>
+                </div>
 
-      <Dialog.Root
-        open={isFormOpen}
-        onOpenChange={(open) => (open ? setIsFormOpen(true) : closeForm())}
-      >
-        <Dialog.Portal>
-          <Dialog.Overlay className="project-dialog-overlay" />
-          <Dialog.Content className="project-dialog-content">
-            <div className="project-dialog-header">
-              <div>
-                <p className="eyebrow">
-                  {editingProjectId ? "Update" : "Create"}
-                </p>
-                <Dialog.Title asChild>
-                  <h2>{editingProjectId ? "Edit project" : "Add a project"}</h2>
-                </Dialog.Title>
+                <Dialog.Close asChild>
+                  <button
+                    className="icon-button"
+                    type="button"
+                    aria-label="Close"
+                  >
+                    <FiX />
+                  </button>
+                </Dialog.Close>
               </div>
 
-              <Dialog.Close asChild>
-                <button
-                  className="icon-button"
-                  type="button"
-                  aria-label="Close"
-                >
-                  <FiX />
-                </button>
-              </Dialog.Close>
-            </div>
+              <Separator.Root className="separator" />
 
-            <Separator.Root className="separator" />
+              <div className="project-dialog-body">
+                <ProjectCreateForm
+                  key={editingProjectId ?? "create-project"}
+                  canManageProjects={canCreateProject}
+                  canUpdateProjects={canUpdateProjects}
+                  isSubmitting={isSubmitting}
+                  isUpdate={Boolean(editingProjectId)}
+                  projectId={editingProjectId}
+                  onCreate={handleCreateProject}
+                  onUpdate={handleProjectUpdate}
+                  onCancelUpdate={closeForm}
+                  notify={notify}
+                />
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
 
-            <div className="project-dialog-body">
-              <ProjectCreateForm
-                key={editingProjectId ?? "create-project"}
-                canManageProjects={canCreateProject}
-                canUpdateProjects={canUpdateProjects}
-                isSubmitting={isSubmitting}
-                isUpdate={Boolean(editingProjectId)}
-                projectId={editingProjectId}
-                onCreate={handleCreateProject}
-                onUpdate={handleProjectUpdate}
-                onCancelUpdate={closeForm}
-                notify={notify}
-              />
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
-
-      <div className="">
-        <section className="panel member-list-panel full-width scrollbar-hide">
-          <div className="panel-heading">
-            <div>
-              <p className="eyebrow">Directory</p>
-              <h2>{filteredProjects.length} Projects</h2>
-            </div>
+        <section className="projects-surface">
+          <div className="projects-toolbar">
+            <SearchBar
+              data={projects}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              filterFn={filterProjects}
+              onFilteredData={setFilteredProjects}
+              placeholder="Search projects..."
+            />
 
             <button
               className="icon-button"
               type="button"
               onClick={fetchProjects}
               aria-label="Refresh projects"
+              title="Refresh projects"
             >
               <FiRefreshCw />
             </button>
           </div>
 
-          <SearchBar
-            data={projects}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            filterFn={filterProjects}
-            onFilteredData={setFilteredProjects}
-            placeholder="Search projects..."
-          />
-
-          <Separator.Root className="separator" />
-          {filteredProjects.length === 0 && (
-            <div className="p-4 text-center text-gray-500">
-              {searchQuery
-                ? "No projects match your search."
-                : "No projects available. Create a new project to get started."}
+          <div className="projects-surface-heading">
+            <div>
+              <p className="eyebrow">Directory</p>
+              <h2>{filteredProjects.length} projects</h2>
             </div>
-          )}
+            <span>{isLoading ? "Loading" : `${projects.length} total`}</span>
+          </div>
+
           <ProjectList
             projects={filteredProjects}
             isLoading={isLoading}
@@ -318,7 +311,7 @@ const ProjectsPage = () => {
             onRegenerateDSN={handleRegenerateDSN}
           />
         </section>
-      </div>
+      </main>
     </WorkspaceLayout>
   );
 };

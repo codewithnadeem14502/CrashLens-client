@@ -1,12 +1,6 @@
-import { FiActivity, FiClock, FiGitCommit, FiLayers } from "react-icons/fi";
 import { Pagination } from "../../../shared/components/Pagination";
-import { RoleSelect } from "../../../shared/ui/RoleSelect";
-
-const issueStatusOptions = [
-  { value: "unresolved", label: "Unresolved" },
-  { value: "resolved", label: "Resolved" },
-  { value: "ignored", label: "Ignored" },
-];
+import { IssueRow } from "./IssueRow";
+import { IssueTableHeader } from "./IssueTableHeader";
 
 const IssueList = ({
   issues = [],
@@ -18,77 +12,52 @@ const IssueList = ({
   pagination,
   onPageChange,
 }) => {
-  if (isLoading) {
-    return <div className="empty-state">Loading issues...</div>;
-  }
-
   return (
-    <div className="issue-list scrollbar-hide">
-      {issues.map((issue) => (
-        <article
-          className={`issue-row ${canReadIssue ? "clickable" : ""}`}
-          key={issue.id ?? issue._id}
-          onClick={() => {
-            if (canReadIssue) {
-              onViewIssueEvents(issue);
-            }
-          }}
-        >
-          <div className="issue-main">
-            <div className="issue-title-row">
-              <span className={`severity-pill ${issue.severity ?? "medium"}`}>
-                {issue.severity ?? "medium"}
-              </span>
-              <h3>{issue.title ?? issue.message ?? "Untitled issue"}</h3>
-            </div>
-            <div className="issue-meta">
-              <span>
-                <FiActivity />
-                {issue.errorName ?? "Error"}
-              </span>
-              <span>
-                <FiLayers />
-                {issue.culprit ?? "No culprit"}
-              </span>
-              <span>
-                <FiGitCommit />
-                {issue.occurrenceCount ?? 0} occurrences
-              </span>
-              <span>
-                <FiClock />
-                {formatDate(issue.lastSeen ?? issue.updatedAt)}
-              </span>
-            </div>
-          </div>
-          <div
-            className="issue-actions"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <RoleSelect
-              value={issue.status ?? "unresolved"}
-              options={issueStatusOptions}
-              disabled={!canManageIssue}
-              onValueChange={(status) =>
-                onUpdateIssueStatus(issue.id ?? issue._id, status)
-              }
-            />
-          </div>
-        </article>
-      ))}
-      <Pagination
-        page={pagination?.page}
-        totalPages={pagination?.totalPages}
-        total={pagination?.total}
-        disabled={isLoading}
-        onPageChange={onPageChange}
-      />
-    </div>
+    <section className="issue-list">
+      <div className="issue-table-wrap">
+        <table className="issue-table" aria-label="Issues">
+          <IssueTableHeader />
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td className="issue-table-state" colSpan="7">Loading issues...</td>
+              </tr>
+            ) : null}
+            {!isLoading && issues.length === 0 ? (
+              <tr>
+                <td className="issue-table-state" colSpan="7">No issues match this view.</td>
+              </tr>
+            ) : null}
+            {!isLoading
+              ? issues.map((issue) => (
+                  <IssueRow
+                    issue={issue}
+                    key={issue.id ?? issue._id}
+                    canManageIssue={canManageIssue}
+                    canReadIssue={canReadIssue}
+                    onUpdateIssueStatus={onUpdateIssueStatus}
+                    onViewIssueEvents={onViewIssueEvents}
+                  />
+                ))
+              : null}
+          </tbody>
+        </table>
+      </div>
+      <div className="issue-pagination-row">
+        {isLoading ? (
+          <span className="issue-pagination-status">Updating table...</span>
+        ) : null}
+        <Pagination
+          page={pagination?.page}
+          totalPages={pagination?.totalPages}
+          total={pagination?.total}
+          limit={pagination?.limit}
+          disabled={isLoading}
+          onPageChange={onPageChange}
+        />
+      </div>
+    </section>
   );
 };
-
-function formatDate(value) {
-  if (!value) return "No date";
-  return new Date(value).toLocaleString();
-}
 
 export default IssueList;

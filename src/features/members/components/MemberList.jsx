@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import { Pagination } from "../../../shared/components/Pagination";
 import { MemberRow } from "./MemberRow";
 import { getMemberId } from "../utils/memberFormatters";
 
@@ -13,70 +14,92 @@ export function MemberList({
   onRoleChange,
   onDeleteMember,
 }) {
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const sentinelRef = useRef(null);
-
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [members]);
-
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisibleCount((current) =>
-            Math.min(current + PAGE_SIZE, members.length),
-          );
-        }
-      },
-      { root: null, rootMargin: "200px", threshold: 0 },
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [members.length]);
-
-  const visibleMembers = useMemo(
-    () => members.slice(0, visibleCount),
-    [members, visibleCount],
+  const total = members.length;
+  const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1);
+  const paginationSignature = useMemo(
+    () => `${searchQuery}:${members.map(getMemberId).join("|")}`,
+    [members, searchQuery],
   );
+  const [paginationState, setPaginationState] = useState({
+    page: 1,
+    signature: paginationSignature,
+  });
+  const activePage =
+    paginationState.signature === paginationSignature
+      ? paginationState.page
+      : 1;
+  const currentPage = Math.min(activePage, totalPages);
+  const visibleMembers = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return members.slice(start, start + PAGE_SIZE);
+  }, [currentPage, members]);
 
-  if (isLoading) {
-    return <div className="empty-state">Loading members...</div>;
-  }
-
-  if (!members.length) {
-    return (
-      <div className="empty-state">
-        {searchQuery
-          ? "No member matches your search."
-          : "No members available. Create a new member to get started."}
-      </div>
-    );
-  }
+  const emptyMessage = searchQuery
+    ? "No member matches your search."
+    : "No members available. Create a new member to get started.";
 
   return (
-    <div className="member-list scrollbar-hide">
-      {visibleMembers.map((member) => (
-        <MemberRow
-          key={getMemberId(member)}
-          member={member}
-          onRoleChange={onRoleChange}
-          onDelete={onDeleteMember}
-          canEdit={canUpdateRoles}
-          canDelete={canDeleteMembers}
+    <div className="member-directory">
+      <div className="member-table-wrap">
+        <table className="member-table" aria-label="Organization members">
+          <thead className="member-table-header">
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Email</th>
+              <th scope="col">Status</th>
+              <th scope="col">Created</th>
+              <th scope="col">Role</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td className="member-table-state" colSpan="6">
+                  Loading members...
+                </td>
+              </tr>
+            ) : null}
+            {!isLoading && !members.length ? (
+              <tr>
+                <td className="member-table-state" colSpan="6">
+                  {emptyMessage}
+                </td>
+              </tr>
+            ) : null}
+            {!isLoading
+              ? visibleMembers.map((member) => (
+                  <MemberRow
+                    key={getMemberId(member)}
+                    member={member}
+                    onRoleChange={onRoleChange}
+                    onDelete={onDeleteMember}
+                    canEdit={canUpdateRoles}
+                    canDelete={canDeleteMembers}
+                  />
+                ))
+              : null}
+          </tbody>
+        </table>
+      </div>
+      <div className="member-pagination-row">
+        {isLoading ? (
+          <span className="issue-pagination-status">Updating table...</span>
+        ) : null}
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          total={total}
+          limit={PAGE_SIZE}
+          disabled={isLoading}
+          onPageChange={(nextPage) =>
+            setPaginationState({
+              page: nextPage,
+              signature: paginationSignature,
+            })
+          }
         />
-      ))}
-      {visibleCount < members.length && (
-        <div
-          ref={sentinelRef}
-          className="member-list-sentinel"
-          aria-hidden="true"
-        />
-      )}
+      </div>
     </div>
   );
 }

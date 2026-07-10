@@ -7,7 +7,6 @@ import {
   getIssueEvents,
 } from "../../features/issues/api/issuesService";
 import { IssueDetailPanel } from "../../features/issues/components/IssueDetailPanel";
-import { UserBadge } from "../../features/members/components/UserBadge";
 import { getProject } from "../../features/projects/api/projectService";
 import { getApiError } from "../../shared/api/errors";
 import { useAuth } from "../../shared/auth/useAuth";
@@ -17,7 +16,7 @@ import { WorkspaceLayout } from "../../shared/layouts/WorkspaceLayout";
 export function IssueDetailPage() {
   const { issueId } = useParams();
   const navigate = useNavigate();
-  const { session, signOut } = useAuth();
+  const { signOut } = useAuth();
   const { notify } = useToast();
   const [issue, setIssue] = useState(null);
   const [events, setEvents] = useState([]);
@@ -121,12 +120,12 @@ export function IssueDetailPage() {
             <FiArrowLeft />
             Back to issues
           </button>
+          <p className="eyebrow">Issue detail</p>
           <h1>Issue detail</h1>
           <p className="muted">
             Inspect occurrence history and grouped error metadata.
           </p>
         </div>
-        <UserBadge session={session}/>
       </header>
 
       {isLoading && !issue ? (

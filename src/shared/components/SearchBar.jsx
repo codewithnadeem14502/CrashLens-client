@@ -18,31 +18,13 @@ const SearchBar = ({
   }, [data, filterFn, onFilteredData, searchQuery]);
 
   return (
-    <div className="relative my-4">
-      <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-
+    <div className="search-control">
+      <FiSearch aria-hidden="true" />
       <input
         type="text"
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         placeholder={placeholder}
-        className="
-          w-full
-          rounded-lg
-          border
-          border-gray-300
-          bg-white
-          py-2.5
-          pl-10
-          pr-4
-          text-sm
-          shadow-sm
-          transition
-          focus:border-indigo-500
-          focus:ring-2
-          focus:ring-indigo-200
-          outline-none
-        "
       />
     </div>
   );

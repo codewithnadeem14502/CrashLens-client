@@ -17,7 +17,6 @@ import {
 import { getDSN } from "../api/projectService";
 import { getApiError } from "../../../shared/api/errors";
 import { useToast } from "../../../shared/components/useToast";
-import InfoCard from "./InfoCard";
 
 const ProjectRow = ({
   project,
@@ -32,6 +31,8 @@ const ProjectRow = ({
   const [DSN, setDSN] = useState("");
   const { notify } = useToast();
   const maskedDSN = "•".repeat(50);
+  const projectId = project.id ?? project._id;
+  const settings = project.settings ?? {};
 
   const copyDSN = async () => {
     if (!DSN) {
@@ -88,7 +89,7 @@ const ProjectRow = ({
   };
 
   const handleRegenerateDSN = async () => {
-    const response = await onRegenerateDSN(project.id);
+    const response = await onRegenerateDSN(projectId);
     const nextDSN = response?.data?.dsn ?? response?.dsn;
 
     if (nextDSN) {
@@ -102,66 +103,56 @@ const ProjectRow = ({
   };
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Details */}
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <InfoCard icon={FiLayers} label="Slug" value={project.slug} />
-
-        <InfoCard
+    <div className="project-detail-content">
+      <div className="project-detail-grid">
+        <ProjectDetailItem icon={FiLayers} label="Slug" value={project.slug} />
+        <ProjectDetailItem
           icon={FiGlobe}
           label="Environment"
           value={project.environment}
         />
-
-        <InfoCard
+        <ProjectDetailItem
           icon={FiActivity}
           label="Platform"
-          value={project.settings.platform}
+          value={settings.platform}
         />
-
-        <InfoCard icon={FiActivity} label="Status" value={project.status} />
-
-        <InfoCard
+        <ProjectDetailItem icon={FiActivity} label="Status" value={project.status} />
+        <ProjectDetailItem
           icon={FiActivity}
-          label="Sample Rate"
-          value={project.settings.sampleRate}
+          label="Sample rate"
+          value={settings.sampleRate}
         />
-
-        <InfoCard
+        <ProjectDetailItem
           icon={FiActivity}
-          label="Release Tracking"
-          value={project.settings.releaseTracking ? "Enabled" : "Disabled"}
+          label="Release tracking"
+          value={settings.releaseTracking ? "Enabled" : "Disabled"}
         />
-
-        <InfoCard
+        <ProjectDetailItem
           icon={FiGlobe}
-          label="Allowed Domains"
-          value={project.settings.allowedDomains.join(", ")}
+          label="Allowed domains"
+          value={(settings.allowedDomains ?? []).join(", ") || "-"}
         />
-
-        <InfoCard
+        <ProjectDetailItem
           icon={FiCalendar}
           label="Created"
-          value={new Date(project.createdAt).toLocaleString()}
+          value={formatProjectDateTime(project.createdAt)}
         />
       </div>
 
-      {/* DSN */}
+      <div className="project-dsn-panel">
+        <div className="project-dsn-header">
+          <h3>Project DSN</h3>
 
-      <div className="rounded-lg border bg-white p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">Project DSN</h3>
-
-          <div className="flex items-center gap-2">
-            {/* Show / Hide */}
+          <div className="project-dsn-actions">
 
             <Tooltip.Provider>
               <Tooltip.Root>
                 <Tooltip.Trigger asChild>
                   <button
-                    onClick={() => handleGetDSN(project.id)}
-                    className="rounded-lg border p-2 transition hover:bg-gray-100"
+                    onClick={() => handleGetDSN(projectId)}
+                    className="icon-button"
+                    type="button"
+                    aria-label={showDSN ? "Hide DSN" : "Show DSN"}
                   >
                     {showDSN ? <FiEyeOff /> : <FiEye />}
                   </button>
@@ -178,18 +169,18 @@ const ProjectRow = ({
               </Tooltip.Root>
             </Tooltip.Provider>
 
-            {/* Copy */}
-
             <Tooltip.Provider>
               <Tooltip.Root>
                 <Tooltip.Trigger asChild>
                   <button
                     onClick={copyDSN}
                     disabled={!showDSN}
-                    className="rounded-lg border p-2 transition hover:bg-gray-100"
+                    className="icon-button"
+                    type="button"
+                    aria-label="Copy DSN"
                   >
                     {copied ? (
-                      <FiCheck className="text-green-600" />
+                      <FiCheck />
                     ) : (
                       <FiCopy />
                     )}
@@ -207,7 +198,6 @@ const ProjectRow = ({
               </Tooltip.Root>
             </Tooltip.Provider>
 
-            {/* Regenerate */}
             <ConfirmProjectAction
               title="Are you sure you want to regenerate?"
               description="Old DSN will no longer work."
@@ -215,7 +205,8 @@ const ProjectRow = ({
               onConfirm={handleRegenerateDSN}
             >
               <button
-                className="rounded-lg border p-2 transition hover:bg-gray-100"
+                className="icon-button"
+                type="button"
                 aria-label="Regenerate DSN"
               >
                 <FiRotateCw />
@@ -227,18 +218,17 @@ const ProjectRow = ({
         <input
           readOnly
           value={showDSN ? DSN : maskedDSN}
-          className="w-full rounded-lg border bg-gray-50 px-3 py-3 font-mono text-sm outline-none"
+          className="project-dsn-input"
         />
       </div>
 
-      {/* Actions */}
-
       {(canUpdate || canDelete) && (
-        <div className="flex justify-end gap-3 border-t pt-5">
+        <div className="project-detail-actions">
           {canUpdate && (
             <button
-              onClick={() => onProjectUpdate(project.id)}
-              className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition hover:bg-gray-100"
+              onClick={() => onProjectUpdate(projectId)}
+              className="secondary-button"
+              type="button"
             >
               <FiEdit2 />
               Edit
@@ -250,9 +240,9 @@ const ProjectRow = ({
               title="Are you sure?"
               description={`This will archive ${project.name}.`}
               actionLabel="Delete"
-              onConfirm={() => onDeleteProject(project.id)}
+              onConfirm={() => onDeleteProject(projectId)}
             >
-              <button className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700">
+              <button className="danger-button" type="button">
                 <FiTrash2 />
                 Delete
               </button>
@@ -263,6 +253,38 @@ const ProjectRow = ({
     </div>
   );
 };
+
+function ProjectDetailItem({ icon: Icon, label, value }) {
+  return (
+    <div className="project-detail-item">
+      <span>
+        <Icon />
+        {label}
+      </span>
+      <strong>{value || "-"}</strong>
+    </div>
+  );
+}
+
+function formatProjectDateTime(value) {
+  if (!value) {
+    return "No date";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "No date";
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
 
 function ConfirmProjectAction({
   title,

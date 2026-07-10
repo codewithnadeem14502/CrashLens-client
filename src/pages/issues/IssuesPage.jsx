@@ -8,15 +8,11 @@ import {
   updateIssueStatus,
 } from "../../features/issues/api/issuesService";
 import { WorkspaceLayout } from "../../shared/layouts/WorkspaceLayout";
-import { UserBadge } from "../../features/members/components/UserBadge";
 import IssueList from "../../features/issues/components/IssueList";
+import { IssueSearchBar } from "../../features/issues/components/IssueSearchBar";
+import { IssuesFilters } from "../../features/issues/components/IssuesFilters";
 import { hasPermission } from "../../shared/auth/permissions";
 import { Permissions } from "../../shared/auth/authEnums";
-import { FiFilter, FiRefreshCw } from "react-icons/fi";
-import * as Popover from "@radix-ui/react-popover";
-import * as Separator from "@radix-ui/react-separator";
-import SearchBar from "../../shared/components/SearchBar";
-import { RoleSelect } from "../../shared/ui/RoleSelect";
 
 const ISSUE_PAGE_LIMIT = 5;
 
@@ -52,7 +48,6 @@ const Issues = () => {
   const organizationId = session.organizationId;
 
   const [issues, setIssues] = useState([]);
-  const [filteredIssues, setFilteredIssues] = useState([]);
   const [issuePagination, setIssuePagination] = useState({
     page: 1,
     limit: ISSUE_PAGE_LIMIT,
@@ -61,9 +56,7 @@ const Issues = () => {
   });
   const [issuePage, setIssuePage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState(defaultIssueFilters);
-  const [draftFilters, setDraftFilters] = useState(defaultIssueFilters);
   const [isLoading, setIsLoading] = useState(true);
   const canViewIssue = useMemo(
     () => hasPermission(session, Permissions.ISSUE_VIEW),
@@ -136,23 +129,22 @@ const Issues = () => {
     }
   };
 
-  const filterIssues = useCallback((issues, query) => {
-    const search = query.trim().toLowerCase();
-
-    return issues.filter((issue) => {
-      return (
-        issue.title?.toLowerCase().includes(search) ||
-        issue.message?.toLowerCase().includes(search) ||
-        issue.errorName?.toLowerCase().includes(search) ||
-        issue.culprit?.toLowerCase().includes(search) ||
-        issue.status?.toLowerCase().includes(search) ||
-        issue.severity?.toLowerCase().includes(search)
-      );
-    });
-  }, []);
-
   const visibleIssues = useMemo(() => {
-    return [...filteredIssues]
+    const search = searchQuery.trim().toLowerCase();
+
+    return [...issues]
+      .filter((issue) => {
+        if (!search) return true;
+
+        return (
+          issue.title?.toLowerCase().includes(search) ||
+          issue.message?.toLowerCase().includes(search) ||
+          issue.errorName?.toLowerCase().includes(search) ||
+          issue.culprit?.toLowerCase().includes(search) ||
+          issue.status?.toLowerCase().includes(search) ||
+          issue.severity?.toLowerCase().includes(search)
+        );
+      })
       .filter(
         (issue) =>
           appliedFilters.status === "all" ||
@@ -164,31 +156,16 @@ const Issues = () => {
           issue.severity === appliedFilters.severity,
       )
       .sort((left, right) => compareIssues(left, right, appliedFilters.sort));
-  }, [appliedFilters, filteredIssues]);
+  }, [appliedFilters, issues, searchQuery]);
 
-  const hasActiveFilters = useMemo(
-    () =>
-      appliedFilters.status !== defaultIssueFilters.status ||
-      appliedFilters.severity !== defaultIssueFilters.severity ||
-      appliedFilters.sort !== defaultIssueFilters.sort,
-    [appliedFilters],
-  );
-
-  const updateDraftFilter = (field) => (value) => {
-    setDraftFilters((current) => ({ ...current, [field]: value }));
-  };
-
-  const applyFilters = () => {
+  const applyFilters = (nextFilters) => {
     setIssuePage(1);
-    setAppliedFilters(draftFilters);
-    setIsFilterOpen(false);
+    setAppliedFilters(nextFilters);
   };
 
   const resetFilters = () => {
     setIssuePage(1);
-    setDraftFilters(defaultIssueFilters);
     setAppliedFilters(defaultIssueFilters);
-    setIsFilterOpen(false);
   };
 
   useEffect(() => {
@@ -197,131 +174,46 @@ const Issues = () => {
   }, [fetchIssues]);
   return (
     <WorkspaceLayout onSignOut={signOut}>
-      <header className="workspace-header">
-        <div>
-          <h1>Issues</h1>
-          <p className="muted">Review grouped errors and update issue status</p>
+      <main className="issues-page">
+        <header className="issues-header">
+          <div>
+            <p className="eyebrow">Issues</p>
+            <h1>Error monitoring</h1>
+            <p className="muted">
+              Review grouped errors, spot noisy regressions, and update status.
+            </p>
+          </div>
+        </header>
+
+        <div className="issues-toolbar">
+          <IssueSearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            activeStatus={appliedFilters.status}
+            activeSeverity={appliedFilters.severity}
+            resultCount={visibleIssues.length}
+          />
+          <IssuesFilters
+            filters={appliedFilters}
+            onApplyFilters={applyFilters}
+            onResetFilters={resetFilters}
+            statusOptions={statusFilterOptions}
+            severityOptions={severityFilterOptions}
+            sortOptions={sortOptions}
+          />
         </div>
 
-        <UserBadge session={session} />
-      </header>
-      <div className="single-panel-grid">
-        <section className="panel member-list-panel scrollbar-hide">
-          <div className="panel-heading">
-            <div>
-              <p className="eyebrow">Directory</p>
-              <h2>{issuePagination.total} Issues</h2>
-            </div>
-
-            <div className="panel-actions">
-              <Popover.Root open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-                <Popover.Trigger asChild>
-                  <button
-                    className={`icon-button ${hasActiveFilters ? "active" : ""}`}
-                    type="button"
-                    aria-label="Open issue filters"
-                  >
-                    <FiFilter />
-                  </button>
-                </Popover.Trigger>
-                <Popover.Portal>
-                  <Popover.Content
-                    className="filter-popover"
-                    align="end"
-                    sideOffset={8}
-                  >
-                    <div className="filter-popover-header">
-                      <strong>Filters</strong>
-                      {hasActiveFilters ? <span>Applied</span> : null}
-                    </div>
-                    <div className="filter-popover-fields">
-                      <div className="field">
-                        <label className="label">Status</label>
-                        <RoleSelect
-                          value={draftFilters.status}
-                          options={statusFilterOptions}
-                          onValueChange={updateDraftFilter("status")}
-                        />
-                      </div>
-                      <div className="field">
-                        <label className="label">Severity</label>
-                        <RoleSelect
-                          value={draftFilters.severity}
-                          options={severityFilterOptions}
-                          onValueChange={updateDraftFilter("severity")}
-                        />
-                      </div>
-                      <div className="field">
-                        <label className="label">Sort</label>
-                        <RoleSelect
-                          value={draftFilters.sort}
-                          options={sortOptions}
-                          onValueChange={updateDraftFilter("sort")}
-                        />
-                      </div>
-                    </div>
-                    <div className="filter-popover-actions">
-                      <button
-                        className="secondary-button"
-                        type="button"
-                        onClick={resetFilters}
-                      >
-                        Reset
-                      </button>
-                      <button
-                        className="primary-button"
-                        type="button"
-                        onClick={applyFilters}
-                      >
-                        Apply
-                      </button>
-                    </div>
-                  </Popover.Content>
-                </Popover.Portal>
-              </Popover.Root>
-
-              <button
-                className="icon-button"
-                type="button"
-                onClick={fetchIssues}
-                aria-label="Refresh Issue"
-              >
-                <FiRefreshCw />
-              </button>
-            </div>
-          </div>
-
-          <SearchBar
-            data={issues}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            filterFn={filterIssues}
-            onFilteredData={setFilteredIssues}
-            placeholder="Search issues..."
-          />
-
-          <Separator.Root className="separator" />
-          {!isLoading && visibleIssues.length === 0 && (
-            <div className="p-4 text-center text-gray-500">
-              {searchQuery || hasActiveFilters
-                ? "No issues match your filters."
-                : "No issues available yet."}
-            </div>
-          )}
-          {isLoading || visibleIssues.length > 0 ? (
-            <IssueList
-              issues={visibleIssues}
-              isLoading={isLoading}
-              canManageIssue={canUpdateIssue}
-              canReadIssue={canViewIssue}
-              onUpdateIssueStatus={handleUpdateIssueStatus}
-              onViewIssueEvents={handleIssueEvents}
-              pagination={issuePagination}
-              onPageChange={setIssuePage}
-            />
-          ) : null}
-        </section>
-      </div>
+        <IssueList
+          issues={visibleIssues}
+          isLoading={isLoading}
+          canManageIssue={canUpdateIssue}
+          canReadIssue={canViewIssue}
+          onUpdateIssueStatus={handleUpdateIssueStatus}
+          onViewIssueEvents={handleIssueEvents}
+          pagination={issuePagination}
+          onPageChange={setIssuePage}
+        />
+      </main>
     </WorkspaceLayout>
   );
 };
