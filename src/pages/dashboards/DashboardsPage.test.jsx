@@ -38,6 +38,17 @@ vi.mock("../../shared/layouts/WorkspaceLayout", () => ({
   WorkspaceLayout: ({ children }) => <div>{children}</div>,
 }));
 
+const mockUseProjectFilter = vi.fn(() => ({
+  projects: [],
+  selectedProjectId: "all",
+  setSelectedProjectId: vi.fn(),
+  isLoading: false,
+}));
+
+vi.mock("../../shared/projectFilter/useProjectFilter", () => ({
+  useProjectFilter: () => mockUseProjectFilter(),
+}));
+
 const renderDashboardsPage = () =>
   render(
     <MemoryRouter>
@@ -69,11 +80,46 @@ describe("DashboardsPage", () => {
     renderDashboardsPage();
     await screen.findByText("Production overview");
 
-    await userEvent.type(screen.getByPlaceholderText("Production overview"), "New one");
     await userEvent.click(screen.getByRole("button", { name: /create dashboard/i }));
+    await userEvent.type(await screen.findByPlaceholderText("Production overview"), "New one");
+    await userEvent.click(screen.getByRole("button", { name: /save dashboard/i }));
 
     await waitFor(() => expect(createDashboard).toHaveBeenCalledWith({ name: "New one", widgets: [] }));
     expect(mockNavigate).toHaveBeenCalledWith("/workspace/dashboards/dash-2");
+  });
+
+  it("sends the globally-selected project as a projectId query param", async () => {
+    mockUseProjectFilter.mockReturnValue({
+      projects: [],
+      selectedProjectId: "project-1",
+      setSelectedProjectId: vi.fn(),
+      isLoading: false,
+    });
+
+    renderDashboardsPage();
+
+    await waitFor(() =>
+      expect(listDashboards).toHaveBeenCalledWith(expect.objectContaining({ projectId: "project-1" })),
+    );
+  });
+
+  it("filters the visible list client-side by dashboard name search", async () => {
+    listDashboards.mockResolvedValue({
+      dashboards: [
+        { id: "dash-1", name: "Production overview", widgets: [{ widgetId: "w1" }] },
+        { id: "dash-2", name: "Staging checkout", widgets: [] },
+      ],
+      pagination: { page: 1, limit: 100, total: 2, totalPages: 1 },
+    });
+
+    renderDashboardsPage();
+    await screen.findByText("Production overview");
+    await screen.findByText("Staging checkout");
+
+    await userEvent.type(screen.getByPlaceholderText("Search by dashboard name"), "staging");
+
+    expect(screen.getByText("Staging checkout")).toBeInTheDocument();
+    expect(screen.queryByText("Production overview")).not.toBeInTheDocument();
   });
 
   it("deleting a dashboard calls deleteDashboard and refreshes the list", async () => {

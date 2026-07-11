@@ -1,10 +1,10 @@
 import * as Select from "@radix-ui/react-select";
 import { FiCheck, FiChevronDown } from "react-icons/fi";
 
-export function RoleSelect({ value, options, disabled, onValueChange }) {
+export function RoleSelect({ value, options, disabled, onValueChange, label = "Role" }) {
   return (
     <Select.Root value={value} disabled={disabled} onValueChange={onValueChange}>
-      <Select.Trigger className="select-trigger" aria-label="Role">
+      <Select.Trigger className="select-trigger" aria-label={label}>
         <Select.Value />
         <Select.Icon>
           <FiChevronDown />

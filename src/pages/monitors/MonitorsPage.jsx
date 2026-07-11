@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Separator from "@radix-ui/react-separator";
 import * as Dialog from "@radix-ui/react-dialog";
-import { FiPlus, FiX } from "react-icons/fi";
+import { FiPlus, FiSearch, FiX } from "react-icons/fi";
 import { WorkspaceLayout } from "../../shared/layouts/WorkspaceLayout";
 import { useAuth } from "../../shared/auth/useAuth";
 import { useToast } from "../../shared/components/useToast";
 import { getApiError } from "../../shared/api/errors";
 import { hasPermission } from "../../shared/auth/permissions";
 import { Permissions } from "../../shared/auth/authEnums";
-import { listProjects } from "../../features/projects/api/projectService";
+import { ProjectFilterField } from "../../shared/components/ProjectFilterField";
+import { useProjectFilter } from "../../shared/projectFilter/useProjectFilter";
 import { createMonitor, deleteMonitor, listMonitors } from "../../features/monitors/api/monitorService";
 import {
   createUptimeMonitor,
@@ -17,33 +18,54 @@ import {
   listUptimeMonitors,
 } from "../../features/monitors/api/uptimeService";
 import { MonitorList } from "../../features/monitors/components/MonitorList";
+import { MonitorsFilters } from "../../features/monitors/components/MonitorsFilters";
 import { CronMonitorForm } from "../../features/monitors/components/CronMonitorForm";
 import { UptimeMonitorForm } from "../../features/monitors/components/UptimeMonitorForm";
 import { CheckTokenCallout } from "../../features/monitors/components/CheckTokenCallout";
+
+const typeFilterOptions = [
+  { value: "all", label: "All types" },
+  { value: "cron", label: "Cron" },
+  { value: "uptime", label: "Uptime" },
+];
+
+const statusFilterOptions = [
+  { value: "all", label: "All statuses" },
+  { value: "active", label: "Active" },
+  { value: "paused", label: "Paused" },
+];
+
+const environmentFilterOptions = [
+  { value: "all", label: "All environments" },
+  { value: "development", label: "development" },
+  { value: "staging", label: "staging" },
+  { value: "production", label: "production" },
+];
+
+const defaultMonitorFilters = Object.freeze({
+  type: "all",
+  status: "all",
+  environment: "all",
+});
 
 function MonitorsPage() {
   const { session, signOut } = useAuth();
   const { notify } = useToast();
   const navigate = useNavigate();
+  const { projects, selectedProjectId } = useProjectFilter();
 
   const canView = useMemo(() => hasPermission(session, Permissions.MONITOR_VIEW), [session]);
   const canManage = useMemo(() => hasPermission(session, Permissions.MONITOR_MANAGE), [session]);
 
-  const [projects, setProjects] = useState([]);
   const [monitors, setMonitors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openForm, setOpenForm] = useState(null); // "cron" | "uptime" | null
   const [issuedCheckToken, setIssuedCheckToken] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [appliedFilters, setAppliedFilters] = useState(defaultMonitorFilters);
 
-  const fetchProjects = useCallback(async () => {
-    try {
-      const projectData = await listProjects();
-      setProjects(Array.isArray(projectData) ? projectData : []);
-    } catch (error) {
-      notify({ title: "Could not load projects", description: getApiError(error), tone: "danger" });
-    }
-  }, [notify]);
+  const latestRequestIdRef = useRef(0);
 
   const fetchMonitors = useCallback(async () => {
     if (!session.organizationId || !canView) {
@@ -51,13 +73,21 @@ function MonitorsPage() {
       return;
     }
 
+    const requestId = (latestRequestIdRef.current += 1);
     setIsLoading(true);
+
+    const projectId = selectedProjectId === "all" ? undefined : selectedProjectId;
+    const status = appliedFilters.status === "all" ? undefined : appliedFilters.status;
 
     try {
       const [cronResult, uptimeResult] = await Promise.all([
-        listMonitors({ limit: 100 }),
-        listUptimeMonitors({ limit: 100 }),
+        listMonitors({ limit: 100, projectId, status }),
+        listUptimeMonitors({ limit: 100, projectId, status }),
       ]);
+
+      if (requestId !== latestRequestIdRef.current) {
+        return;
+      }
 
       const combined = [
         ...cronResult.monitors.map((monitor) => ({ ...monitor, type: "cron" })),
@@ -66,17 +96,45 @@ function MonitorsPage() {
 
       setMonitors(combined);
     } catch (error) {
+      if (requestId !== latestRequestIdRef.current) {
+        return;
+      }
+
       notify({ title: "Could not load monitors", description: getApiError(error), tone: "danger" });
     } finally {
-      setIsLoading(false);
+      if (requestId === latestRequestIdRef.current) {
+        setIsLoading(false);
+      }
     }
-  }, [session.organizationId, canView, notify]);
+  }, [session.organizationId, canView, notify, selectedProjectId, appliedFilters.status]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchProjects();
     fetchMonitors();
-  }, [fetchProjects, fetchMonitors]);
+  }, [fetchMonitors]);
+
+  // Type/environment/search have no server-side filter support today (see
+  // .claude/rules/real-architecture-reference.md) - filtered client-side over
+  // the already-fetched, project+status-narrowed page. Status is server-side
+  // only (see fetchMonitors) so it isn't re-applied here.
+  const visibleMonitors = useMemo(() => {
+    const needle = searchQuery.trim().toLowerCase();
+
+    return monitors.filter(
+      (monitor) =>
+        (appliedFilters.type === "all" || monitor.type === appliedFilters.type) &&
+        (appliedFilters.environment === "all" || monitor.environment === appliedFilters.environment) &&
+        (!needle || monitor.name?.toLowerCase().includes(needle)),
+    );
+  }, [monitors, appliedFilters.type, appliedFilters.environment, searchQuery]);
+
+  const applyFilters = (nextFilters) => {
+    setAppliedFilters(nextFilters);
+  };
+
+  const resetFilters = () => {
+    setAppliedFilters(defaultMonitorFilters);
+  };
 
   const closeForm = () => {
     setOpenForm(null);
@@ -213,16 +271,47 @@ function MonitorsPage() {
           </Dialog.Portal>
         </Dialog.Root>
 
+        <div className="project-scope-toolbar">
+          <ProjectFilterField />
+          <div className="issue-search-box">
+            <FiSearch />
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search by monitor name"
+              type="text"
+            />
+            {searchQuery ? (
+              <button
+                className="issue-search-clear"
+                type="button"
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear monitor search"
+              >
+                <FiX />
+              </button>
+            ) : null}
+          </div>
+          <MonitorsFilters
+            filters={appliedFilters}
+            onApplyFilters={applyFilters}
+            onResetFilters={resetFilters}
+            typeOptions={typeFilterOptions}
+            statusOptions={statusFilterOptions}
+            environmentOptions={environmentFilterOptions}
+          />
+        </div>
+
         <section className="projects-surface">
           <div className="projects-surface-heading">
             <div>
               <p className="eyebrow">Directory</p>
-              <h2>{monitors.length} monitors</h2>
+              <h2>{visibleMonitors.length} monitors</h2>
             </div>
           </div>
 
           <MonitorList
-            monitors={monitors}
+            monitors={visibleMonitors}
             isLoading={isLoading}
             canManage={canManage}
             onView={handleView}

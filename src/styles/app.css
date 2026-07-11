@@ -1623,7 +1623,14 @@ textarea:focus-visible,
 
 .issues-toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 10px;
+}
+
+.project-scope-toolbar {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
 }
@@ -3255,6 +3262,7 @@ textarea:focus-visible,
   .issues-toolbar,
   .member-toolbar,
   .projects-toolbar,
+  .project-scope-toolbar,
   .issue-search-row {
     align-items: stretch;
     grid-template-columns: 1fr;

@@ -13,6 +13,8 @@ import { IssueSearchBar } from "../../features/issues/components/IssueSearchBar"
 import { IssuesFilters } from "../../features/issues/components/IssuesFilters";
 import { hasPermission } from "../../shared/auth/permissions";
 import { Permissions } from "../../shared/auth/authEnums";
+import { ProjectFilterField } from "../../shared/components/ProjectFilterField";
+import { useProjectFilter } from "../../shared/projectFilter/useProjectFilter";
 
 const ISSUE_PAGE_LIMIT = 5;
 
@@ -44,6 +46,7 @@ const Issues = () => {
   const { session, signOut } = useAuth();
   const { notify } = useToast();
   const navigate = useNavigate();
+  const { selectedProjectId } = useProjectFilter();
 
   const organizationId = session.organizationId;
 
@@ -105,6 +108,7 @@ const Issues = () => {
       const issueData = await listIssues({
         page: issuePage,
         limit: ISSUE_PAGE_LIMIT,
+        projectId: selectedProjectId === "all" ? undefined : selectedProjectId,
         status:
           appliedFilters.status === "all" ? undefined : appliedFilters.status,
         severity:
@@ -151,6 +155,7 @@ const Issues = () => {
     issuePage,
     organizationId,
     notify,
+    selectedProjectId,
     appliedFilters.status,
     appliedFilters.severity,
     appliedFilters.sort,
@@ -217,17 +222,6 @@ const Issues = () => {
     fetchIssues();
   }, [fetchIssues]);
 
-  // Only hides the toolbar for the true "nothing has ever come in yet"
-  // case (no search/filter ever applied, zero results) - once the user has
-  // typed a search or picked a filter, the toolbar stays up even if that
-  // narrows the result set to zero, so they can still adjust/reset it.
-  const isPristineAndEmpty =
-    !isLoading &&
-    !debouncedSearch &&
-    appliedFilters.status === "all" &&
-    appliedFilters.severity === "all" &&
-    issuePagination.total === 0;
-
   return (
     <WorkspaceLayout onSignOut={signOut}>
       <main className="issues-page">
@@ -241,27 +235,25 @@ const Issues = () => {
           </div>
         </header>
 
-        {!isPristineAndEmpty ? (
-          <div className="issues-toolbar">
-            <IssueSearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
-              activeStatus={appliedFilters.status}
-              activeSeverity={appliedFilters.severity}
-              resultCount={issuePagination.total}
-              onClearStatus={() => clearFilterField("status")}
-              onClearSeverity={() => clearFilterField("severity")}
-            />
-            <IssuesFilters
-              filters={appliedFilters}
-              onApplyFilters={applyFilters}
-              onResetFilters={resetFilters}
-              statusOptions={statusFilterOptions}
-              severityOptions={severityFilterOptions}
-              sortOptions={sortOptions}
-            />
-          </div>
-        ) : null}
+        <div className="issues-toolbar">
+          <ProjectFilterField />
+          <IssueSearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            activeStatus={appliedFilters.status}
+            activeSeverity={appliedFilters.severity}
+            onClearStatus={() => clearFilterField("status")}
+            onClearSeverity={() => clearFilterField("severity")}
+          />
+          <IssuesFilters
+            filters={appliedFilters}
+            onApplyFilters={applyFilters}
+            onResetFilters={resetFilters}
+            statusOptions={statusFilterOptions}
+            severityOptions={severityFilterOptions}
+            sortOptions={sortOptions}
+          />
+        </div>
 
         <IssueList
           issues={visibleIssues}

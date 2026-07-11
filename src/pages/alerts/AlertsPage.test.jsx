@@ -37,6 +37,17 @@ vi.mock("../../shared/layouts/WorkspaceLayout", () => ({
   WorkspaceLayout: ({ children }) => <div>{children}</div>,
 }));
 
+const mockUseProjectFilter = vi.fn(() => ({
+  projects: [],
+  selectedProjectId: "all",
+  setSelectedProjectId: vi.fn(),
+  isLoading: false,
+}));
+
+vi.mock("../../shared/projectFilter/useProjectFilter", () => ({
+  useProjectFilter: () => mockUseProjectFilter(),
+}));
+
 const sampleRule = {
   id: "rule-1",
   name: "High error rate",
@@ -102,5 +113,36 @@ describe("AlertsPage", () => {
 
     expect(screen.getByRole("button", { name: /save rule/i })).toBeDisabled();
     expect(createAlertRule).not.toHaveBeenCalled();
+  });
+
+  it("sends the globally-selected project as a projectId query param", async () => {
+    mockUseProjectFilter.mockReturnValue({
+      projects: [],
+      selectedProjectId: "project-1",
+      setSelectedProjectId: vi.fn(),
+      isLoading: false,
+    });
+
+    renderAlertsPage();
+
+    await waitFor(() =>
+      expect(listAlertRules).toHaveBeenCalledWith(expect.objectContaining({ projectId: "project-1" })),
+    );
+  });
+
+  it("filters the visible list client-side by rule name search", async () => {
+    listAlertRules.mockResolvedValue({
+      rules: [sampleRule, { ...sampleRule, id: "rule-2", name: "Slow checkout endpoint" }],
+      pagination: { page: 1, limit: 100, total: 2, totalPages: 1 },
+    });
+
+    renderAlertsPage();
+    await screen.findByText("High error rate");
+    await screen.findByText("Slow checkout endpoint");
+
+    await userEvent.type(screen.getByPlaceholderText("Search by rule name"), "checkout");
+
+    expect(screen.getByText("Slow checkout endpoint")).toBeInTheDocument();
+    expect(screen.queryByText("High error rate")).not.toBeInTheDocument();
   });
 });

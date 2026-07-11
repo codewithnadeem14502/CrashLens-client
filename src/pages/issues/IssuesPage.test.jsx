@@ -33,6 +33,17 @@ vi.mock("../../shared/layouts/WorkspaceLayout", () => ({
   WorkspaceLayout: ({ children }) => <div>{children}</div>,
 }));
 
+const mockUseProjectFilter = vi.fn(() => ({
+  projects: [],
+  selectedProjectId: "all",
+  setSelectedProjectId: vi.fn(),
+  isLoading: false,
+}));
+
+vi.mock("../../shared/projectFilter/useProjectFilter", () => ({
+  useProjectFilter: () => mockUseProjectFilter(),
+}));
+
 vi.mock("../../features/issues/components/IssueList", () => ({
   default: ({ issues }) => (
     <ul data-testid="issue-list">
@@ -44,14 +55,13 @@ vi.mock("../../features/issues/components/IssueList", () => ({
 }));
 
 vi.mock("../../features/issues/components/IssueSearchBar", () => ({
-  IssueSearchBar: ({ value, onChange, resultCount }) => (
+  IssueSearchBar: ({ value, onChange }) => (
     <div>
       <input
         aria-label="search issues"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
-      <span data-testid="result-count">{resultCount}</span>
     </div>
   ),
 }));
@@ -225,16 +235,20 @@ describe("IssuesPage filtering", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows the server-reported total (not just the current page's length) as the result count", async () => {
-    listIssues.mockResolvedValue({
-      issues: [{ id: "1", title: "Only this page" }],
-      pagination: { page: 1, limit: 5, total: 42, totalPages: 9 },
+  it("sends the globally-selected project as a projectId query param", async () => {
+    mockUseProjectFilter.mockReturnValue({
+      projects: [],
+      selectedProjectId: "project-1",
+      setSelectedProjectId: vi.fn(),
+      isLoading: false,
     });
 
     renderIssuesPage();
 
     await waitFor(() =>
-      expect(screen.getByTestId("result-count")).toHaveTextContent("42"),
+      expect(listIssues).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: "project-1" }),
+      ),
     );
   });
 });

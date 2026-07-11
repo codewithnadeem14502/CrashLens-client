@@ -5,7 +5,6 @@ export function IssueSearchBar({
   onChange,
   activeStatus,
   activeSeverity,
-  resultCount,
   onClearStatus,
   onClearSeverity,
 }) {
@@ -58,7 +57,6 @@ export function IssueSearchBar({
           </button>
         ) : null}
       </div>
-      <span className="issue-result-count">{resultCount} shown</span>
     </section>
   );
 }

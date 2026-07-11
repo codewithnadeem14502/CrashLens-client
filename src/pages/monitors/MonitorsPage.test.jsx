@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import MonitorsPage from "./MonitorsPage";
 import { listMonitors, createMonitor, deleteMonitor } from "../../features/monitors/api/monitorService";
 import { listUptimeMonitors, deleteUptimeMonitor } from "../../features/monitors/api/uptimeService";
-import { listProjects } from "../../features/projects/api/projectService";
 
 const mockNavigate = vi.fn();
 // Stable references across renders, matching how the real hooks behave
@@ -36,10 +35,6 @@ vi.mock("../../features/monitors/api/uptimeService", () => ({
   deleteUptimeMonitor: vi.fn(),
 }));
 
-vi.mock("../../features/projects/api/projectService", () => ({
-  listProjects: vi.fn(),
-}));
-
 vi.mock("../../shared/auth/useAuth", () => ({
   useAuth: () => ({ session: mockSession, signOut: mockSignOut }),
 }));
@@ -52,6 +47,17 @@ vi.mock("../../shared/layouts/WorkspaceLayout", () => ({
   WorkspaceLayout: ({ children }) => <div>{children}</div>,
 }));
 
+const mockUseProjectFilter = vi.fn(() => ({
+  projects: [{ id: "project-1", name: "Demo Project" }],
+  selectedProjectId: "all",
+  setSelectedProjectId: vi.fn(),
+  isLoading: false,
+}));
+
+vi.mock("../../shared/projectFilter/useProjectFilter", () => ({
+  useProjectFilter: () => mockUseProjectFilter(),
+}));
+
 const renderMonitorsPage = () =>
   render(
     <MemoryRouter>
@@ -62,7 +68,6 @@ const renderMonitorsPage = () =>
 beforeEach(() => {
   vi.clearAllMocks();
   mockNavigate.mockClear();
-  listProjects.mockResolvedValue([{ id: "project-1", name: "Demo Project" }]);
   listMonitors.mockResolvedValue({
     monitors: [
       {
@@ -171,5 +176,34 @@ describe("MonitorsPage", () => {
 
     await waitFor(() => expect(deleteUptimeMonitor).toHaveBeenCalledWith("uptime-1"));
     expect(deleteMonitor).not.toHaveBeenCalled();
+  });
+
+  it("sends the globally-selected project as a projectId query param to both monitor list endpoints", async () => {
+    mockUseProjectFilter.mockReturnValue({
+      projects: [{ id: "project-1", name: "Demo Project" }],
+      selectedProjectId: "project-1",
+      setSelectedProjectId: vi.fn(),
+      isLoading: false,
+    });
+
+    renderMonitorsPage();
+
+    await waitFor(() =>
+      expect(listMonitors).toHaveBeenCalledWith(expect.objectContaining({ projectId: "project-1" })),
+    );
+    await waitFor(() =>
+      expect(listUptimeMonitors).toHaveBeenCalledWith(expect.objectContaining({ projectId: "project-1" })),
+    );
+  });
+
+  it("filters the visible list client-side by monitor name search", async () => {
+    renderMonitorsPage();
+    await screen.findByText("Nightly backup");
+    await screen.findByText("API health");
+
+    await userEvent.type(screen.getByPlaceholderText("Search by monitor name"), "night");
+
+    expect(screen.getByText("Nightly backup")).toBeInTheDocument();
+    expect(screen.queryByText("API health")).not.toBeInTheDocument();
   });
 });

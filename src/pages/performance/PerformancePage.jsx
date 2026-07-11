@@ -25,9 +25,10 @@ import { useToast } from "../../shared/components/useToast";
 import { getApiError } from "../../shared/api/errors";
 import { hasPermission } from "../../shared/auth/permissions";
 import { Permissions } from "../../shared/auth/authEnums";
-import { listProjects } from "../../features/projects/api/projectService";
 import { RoleSelect } from "../../shared/ui/RoleSelect";
 import { EmptyState } from "../../shared/components/EmptyState";
+import { ProjectFilterField } from "../../shared/components/ProjectFilterField";
+import { useProjectFilter } from "../../shared/projectFilter/useProjectFilter";
 import {
   getEndpointPerformance,
   getEndpointTrends,
@@ -36,7 +37,6 @@ import {
 } from "../../features/performance/api/performanceService";
 
 const defaultFilters = Object.freeze({
-  projectId: "all",
   environment: "all",
   release: "",
   dateFrom: "",
@@ -53,7 +53,7 @@ const environmentSelectOptions = environmentOptions.map((environment) => ({
 export function PerformancePage() {
   const { session, signOut } = useAuth();
   const { notify } = useToast();
-  const [projects, setProjects] = useState([]);
+  const { selectedProjectId } = useProjectFilter();
   const [endpoints, setEndpoints] = useState([]);
   const [filters, setFilters] = useState(defaultFilters);
   const [selectedEndpointId, setSelectedEndpointId] = useState("");
@@ -70,7 +70,7 @@ export function PerformancePage() {
 
   const requestParams = useMemo(
     () => ({
-      projectId: filters.projectId === "all" ? undefined : filters.projectId,
+      projectId: selectedProjectId === "all" ? undefined : selectedProjectId,
       environment:
         filters.environment === "all" ? undefined : filters.environment,
       release: filters.release.trim() || undefined,
@@ -78,42 +78,23 @@ export function PerformancePage() {
       dateTo: filters.dateTo || undefined,
       slowThresholdMs: filters.slowThresholdMs,
     }),
-    [filters],
+    [filters, selectedProjectId],
   );
 
   const selectedEndpoint = useMemo(
     () =>
-      endpoints.find((endpoint) => endpoint.endpointId === selectedEndpointId) ??
+      endpoints.find(
+        (endpoint) => endpoint.endpointId === selectedEndpointId,
+      ) ??
       endpoints[0] ??
       null,
     [endpoints, selectedEndpointId],
   );
 
-  const totalSummary = useMemo(() => summarizeEndpoints(endpoints), [endpoints]);
-
-  const projectFilterOptions = useMemo(
-    () => [
-      { value: "all", label: "All projects" },
-      ...projects.map((project) => ({
-        value: project.id ?? project._id,
-        label: project.name,
-      })),
-    ],
-    [projects],
+  const totalSummary = useMemo(
+    () => summarizeEndpoints(endpoints),
+    [endpoints],
   );
-
-  const fetchProjects = useCallback(async () => {
-    try {
-      const projectData = await listProjects();
-      setProjects(Array.isArray(projectData) ? projectData : []);
-    } catch (error) {
-      notify({
-        title: "Could not load projects",
-        description: getApiError(error),
-        tone: "danger",
-      });
-    }
-  }, [notify]);
 
   const fetchEndpoints = useCallback(async () => {
     if (!canViewPerformance || !session.organizationId) {
@@ -186,11 +167,6 @@ export function PerformancePage() {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchProjects();
-  }, [fetchProjects]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchEndpoints();
   }, [fetchEndpoints]);
 
@@ -235,15 +211,11 @@ export function PerformancePage() {
           </div>
         </header>
 
-        <section className="performance-filters" aria-label="Performance filters">
-          <div className="performance-filter-field">
-            <span>Project</span>
-            <RoleSelect
-              value={filters.projectId}
-              options={projectFilterOptions}
-              onValueChange={(value) => updateFilter("projectId", value)}
-            />
-          </div>
+        <section
+          className="performance-filters"
+          aria-label="Performance filters"
+        >
+          <ProjectFilterField />
           <div className="performance-filter-field">
             <span>Environment</span>
             <RoleSelect
@@ -442,7 +414,9 @@ function EndpointOverview({ endpoint, detail, trends, trace, isLoading }) {
             <h2>
               {endpoint.method} {endpoint.route}
             </h2>
-            <span>{isLoading ? "Refreshing details" : "Selected endpoint"}</span>
+            <span>
+              {isLoading ? "Refreshing details" : "Selected endpoint"}
+            </span>
           </div>
         </div>
 
@@ -601,7 +575,9 @@ function ChartFrame({ children, compact = false }) {
 
 function TransactionList({ transactions, compact = false }) {
   if (!transactions.length) {
-    return <div className="performance-state compact">No transactions found.</div>;
+    return (
+      <div className="performance-state compact">No transactions found.</div>
+    );
   }
 
   return (
@@ -652,7 +628,8 @@ function summarizeEndpoints(endpoints) {
   );
   const weightedErrors = endpoints.reduce(
     (sum, endpoint) =>
-      sum + Number(endpoint.errorRate ?? 0) * Number(endpoint.requestCount ?? 0),
+      sum +
+      Number(endpoint.errorRate ?? 0) * Number(endpoint.requestCount ?? 0),
     0,
   );
   const p95DurationMs = Math.max(

@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
-import { FiGrid, FiPlus, FiTrash2 } from "react-icons/fi";
+import * as Separator from "@radix-ui/react-separator";
+import * as Dialog from "@radix-ui/react-dialog";
+import { FiGrid, FiPlus, FiSearch, FiTrash2, FiX } from "react-icons/fi";
 import { WorkspaceLayout } from "../../shared/layouts/WorkspaceLayout";
 import { useAuth } from "../../shared/auth/useAuth";
 import { useToast } from "../../shared/components/useToast";
@@ -10,6 +12,8 @@ import { hasPermission } from "../../shared/auth/permissions";
 import { Permissions } from "../../shared/auth/authEnums";
 import { FormField } from "../../shared/ui/FormField";
 import { EmptyState } from "../../shared/components/EmptyState";
+import { ProjectFilterField } from "../../shared/components/ProjectFilterField";
+import { useProjectFilter } from "../../shared/projectFilter/useProjectFilter";
 import {
   createDashboard,
   deleteDashboard,
@@ -20,6 +24,7 @@ function DashboardsPage() {
   const { session, signOut } = useAuth();
   const { notify } = useToast();
   const navigate = useNavigate();
+  const { selectedProjectId } = useProjectFilter();
 
   const canView = useMemo(() => hasPermission(session, Permissions.ALERT_VIEW), [session]);
   const canManage = useMemo(() => hasPermission(session, Permissions.ALERT_MANAGE), [session]);
@@ -28,6 +33,10 @@ function DashboardsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [newName, setNewName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const latestRequestIdRef = useRef(0);
 
   const fetchDashboards = useCallback(async () => {
     if (!canView) {
@@ -35,22 +44,50 @@ function DashboardsPage() {
       return;
     }
 
+    const requestId = (latestRequestIdRef.current += 1);
     setIsLoading(true);
 
     try {
-      const data = await listDashboards({ limit: 100 });
+      const data = await listDashboards({
+        limit: 100,
+        projectId: selectedProjectId === "all" ? undefined : selectedProjectId,
+      });
+
+      if (requestId !== latestRequestIdRef.current) {
+        return;
+      }
+
       setDashboards(data.dashboards);
     } catch (error) {
+      if (requestId !== latestRequestIdRef.current) {
+        return;
+      }
+
       notify({ title: "Could not load dashboards", description: getApiError(error), tone: "danger" });
     } finally {
-      setIsLoading(false);
+      if (requestId === latestRequestIdRef.current) {
+        setIsLoading(false);
+      }
     }
-  }, [canView, notify]);
+  }, [canView, notify, selectedProjectId]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDashboards();
   }, [fetchDashboards]);
+
+  // No server-side search support (see
+  // .claude/rules/real-architecture-reference.md) - filtered client-side
+  // over the already-fetched, project-narrowed page.
+  const visibleDashboards = useMemo(() => {
+    const needle = searchQuery.trim().toLowerCase();
+    return dashboards.filter((dashboard) => !needle || dashboard.name?.toLowerCase().includes(needle));
+  }, [dashboards, searchQuery]);
+
+  const closeForm = () => {
+    setIsFormOpen(false);
+    setNewName("");
+  };
 
   const handleCreate = async (event) => {
     event.preventDefault();
@@ -58,7 +95,7 @@ function DashboardsPage() {
 
     try {
       const response = await createDashboard({ name: newName, widgets: [] });
-      setNewName("");
+      closeForm();
       await fetchDashboards();
       navigate(`/workspace/dashboards/${response.data.dashboard.id}`);
     } catch (error) {
@@ -78,22 +115,6 @@ function DashboardsPage() {
     }
   };
 
-  const createDashboardForm = (
-    <form className="field-row" onSubmit={handleCreate}>
-      <FormField
-        label="New dashboard name"
-        value={newName}
-        onChange={(event) => setNewName(event.target.value)}
-        placeholder="Production overview"
-        required
-      />
-      <button className="primary-button" type="submit" disabled={isCreating || !newName}>
-        <FiPlus />
-        Create dashboard
-      </button>
-    </form>
-  );
-
   return (
     <WorkspaceLayout onSignOut={signOut}>
       <main className="projects-page">
@@ -105,27 +126,94 @@ function DashboardsPage() {
           </div>
         </header>
 
-        {canManage && dashboards.length > 0 ? createDashboardForm : null}
+        <Dialog.Root open={isFormOpen} onOpenChange={(open) => (open ? null : closeForm())}>
+          <Dialog.Portal>
+            <Dialog.Overlay className="project-dialog-overlay" />
+            <Dialog.Content className="project-dialog-content">
+              <div className="project-dialog-header">
+                <div>
+                  <p className="eyebrow">Create</p>
+                  <Dialog.Title asChild>
+                    <h2>New dashboard</h2>
+                  </Dialog.Title>
+                </div>
+                <Dialog.Close asChild>
+                  <button className="icon-button" type="button" aria-label="Close">
+                    <FiX />
+                  </button>
+                </Dialog.Close>
+              </div>
+              <Separator.Root className="separator" />
+              <div className="project-dialog-body">
+                <form className="field-row" onSubmit={handleCreate}>
+                  <FormField
+                    label="New dashboard name"
+                    value={newName}
+                    onChange={(event) => setNewName(event.target.value)}
+                    placeholder="Production overview"
+                    required
+                  />
+                  <button className="primary-button" type="submit" disabled={isCreating || !newName}>
+                    <FiPlus />
+                    Save dashboard
+                  </button>
+                </form>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
+
+        <div className="project-scope-toolbar">
+          <ProjectFilterField />
+          <div className="issue-search-box">
+            <FiSearch />
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search by dashboard name"
+              type="text"
+            />
+            {searchQuery ? (
+              <button
+                className="issue-search-clear"
+                type="button"
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear dashboard search"
+              >
+                <FiX />
+              </button>
+            ) : null}
+          </div>
+          {canManage && dashboards.length > 0 ? (
+            <button className="primary-button" type="button" onClick={() => setIsFormOpen(true)}>
+              <FiPlus />
+              Create dashboard
+            </button>
+          ) : null}
+        </div>
 
         <section className="projects-surface">
           <div className="projects-surface-heading">
             <div>
               <p className="eyebrow">Directory</p>
-              <h2>{dashboards.length} dashboards</h2>
+              <h2>{visibleDashboards.length} dashboards</h2>
             </div>
           </div>
 
           {isLoading ? <div className="project-table-state">Loading dashboards...</div> : null}
-          {!isLoading && dashboards.length === 0 ? (
+          {!isLoading && visibleDashboards.length === 0 ? (
             <EmptyState
               icon={FiGrid}
               title="No dashboards yet"
               description="Build a custom dashboard from your issues, performance, logs, and monitor data."
-            >
-              {canManage ? createDashboardForm : null}
-            </EmptyState>
+              actions={
+                canManage
+                  ? [{ label: "Create dashboard", icon: <FiPlus />, onClick: () => setIsFormOpen(true) }]
+                  : undefined
+              }
+            />
           ) : null}
-          {!isLoading && dashboards.length > 0 ? (
+          {!isLoading && visibleDashboards.length > 0 ? (
             <div className="project-table-wrap">
               <table className="project-table dashboard-table" aria-label="Dashboards">
                 <thead>
@@ -136,7 +224,7 @@ function DashboardsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {dashboards.map((dashboard) => (
+                  {visibleDashboards.map((dashboard) => (
                     <tr
                       className="project-table-row clickable"
                       key={dashboard.id}
