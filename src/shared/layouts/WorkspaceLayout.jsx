@@ -1,4 +1,14 @@
-import { FiActivity, FiInbox, FiLogOut, FiShield, FiUsers } from "react-icons/fi";
+import {
+  FiActivity,
+  FiAlertOctagon,
+  FiBell,
+  FiFileText,
+  FiGrid,
+  FiLogOut,
+  FiRadio,
+  FiShield,
+  FiUsers,
+} from "react-icons/fi";
 import { GoProjectRoadmap } from "react-icons/go";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
@@ -28,41 +38,95 @@ export function WorkspaceLayout({ children, onSignOut }) {
             <span>CrashLens</span>
           </div>
           <nav className="nav-list" aria-label="Workspace navigation">
-            {userRole !== Roles.VIEWER && (
+            <div className="nav-section">
+              <span className="nav-section-label">Workspace</span>
               <NavLink
-                aria-label="Members"
+                aria-label="Projects"
                 className={getNavClassName}
-                title="Members"
-                to="/workspace/members"
+                title="Projects"
+                to="/workspace/projects"
               >
-                <FiUsers />
+                <GoProjectRoadmap />
+                <span className="nav-item-label">Projects</span>
               </NavLink>
-            )}
-            <NavLink
-              aria-label="Projects"
-              className={getNavClassName}
-              title="Projects"
-              to="/workspace/projects"
-            >
-              <GoProjectRoadmap />
-            </NavLink>
-            <NavLink
-              aria-label="Issues"
-              className={getNavClassName}
-              end={false}
-              title="Issues"
-              to="/workspace/issues"
-            >
-              <FiInbox />
-            </NavLink>
-            <NavLink
-              aria-label="Performance"
-              className={getNavClassName}
-              title="Performance"
-              to="/workspace/performance"
-            >
-              <FiActivity />
-            </NavLink>
+              {userRole !== Roles.VIEWER && (
+                <NavLink
+                  aria-label="Members"
+                  className={getNavClassName}
+                  title="Members"
+                  to="/workspace/members"
+                >
+                  <FiUsers />
+                  <span className="nav-item-label">Members</span>
+                </NavLink>
+              )}
+            </div>
+
+            <div className="nav-section">
+              <span className="nav-section-label">Monitoring</span>
+              <NavLink
+                aria-label="Issues"
+                className={getNavClassName}
+                end={false}
+                title="Issues"
+                to="/workspace/issues"
+              >
+                <FiAlertOctagon />
+                <span className="nav-item-label">Issues</span>
+              </NavLink>
+              <NavLink
+                aria-label="Performance"
+                className={getNavClassName}
+                title="Performance"
+                to="/workspace/performance"
+              >
+                <FiActivity />
+                <span className="nav-item-label">Performance</span>
+              </NavLink>
+              <NavLink
+                aria-label="Logs"
+                className={getNavClassName}
+                title="Logs"
+                to="/workspace/logs"
+              >
+                <FiFileText />
+                <span className="nav-item-label">Logs</span>
+              </NavLink>
+              <NavLink
+                aria-label="Monitors"
+                className={getNavClassName}
+                end={false}
+                title="Monitors"
+                to="/workspace/monitors"
+              >
+                <FiRadio />
+                <span className="nav-item-label">Monitors</span>
+              </NavLink>
+            </div>
+
+            <div className="nav-section">
+              <span className="nav-section-label">Insights</span>
+              <NavLink
+                aria-label="Dashboards"
+                className={getNavClassName}
+                end={false}
+                title="Dashboards"
+                to="/workspace/dashboards"
+              >
+                <FiGrid />
+                <span className="nav-item-label">Dashboards</span>
+              </NavLink>
+              <NavLink
+                aria-label="Alerts"
+                className={getNavClassName}
+                end={false}
+                title="Alerts"
+                to="/workspace/alerts"
+              >
+                <FiBell />
+                <span className="nav-item-label">Alerts</span>
+              </NavLink>
+            </div>
           </nav>
         </div>
         <div className="sidebar-bottom">

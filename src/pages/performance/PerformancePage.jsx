@@ -3,6 +3,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -498,14 +499,15 @@ function EndpointOverview({ endpoint, detail, trends, trace, isLoading }) {
         </div>
         <ChartFrame>
           <LineChart data={trendRows}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis dataKey="bucket" tickLine={false} />
             <YAxis tickLine={false} width={42} />
             <Tooltip formatter={(value) => formatMs(value)} />
+            <Legend />
             <Line
               type="monotone"
               dataKey="averageDurationMs"
-              stroke="#0770e4"
+              stroke="var(--brand-blue)"
               strokeWidth={2}
               dot={false}
               name="Avg"
@@ -513,7 +515,7 @@ function EndpointOverview({ endpoint, detail, trends, trace, isLoading }) {
             <Line
               type="monotone"
               dataKey="p95DurationMs"
-              stroke="#fc790d"
+              stroke="var(--brand-orange)"
               strokeWidth={2}
               dot={false}
               name="p95"
@@ -521,7 +523,7 @@ function EndpointOverview({ endpoint, detail, trends, trace, isLoading }) {
             <Line
               type="monotone"
               dataKey="p99DurationMs"
-              stroke="#dc3532"
+              stroke="var(--danger)"
               strokeWidth={2}
               dot={false}
               name="p99"
@@ -540,15 +542,15 @@ function EndpointOverview({ endpoint, detail, trends, trace, isLoading }) {
           </div>
           <ChartFrame compact>
             <AreaChart data={trendRows}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="bucket" tickLine={false} />
               <YAxis tickLine={false} width={36} />
               <Tooltip />
               <Area
                 type="monotone"
                 dataKey="requestCount"
-                stroke="#0770e4"
-                fill="#f2f9ff"
+                stroke="var(--brand-blue)"
+                fill="var(--info-soft)"
                 name="Requests"
               />
             </AreaChart>
@@ -564,15 +566,15 @@ function EndpointOverview({ endpoint, detail, trends, trace, isLoading }) {
           </div>
           <ChartFrame compact>
             <AreaChart data={trendRows}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="bucket" tickLine={false} />
               <YAxis tickLine={false} width={36} />
               <Tooltip formatter={(value) => `${formatNumber(value)}%`} />
               <Area
                 type="monotone"
                 dataKey="errorRate"
-                stroke="#dc3532"
-                fill="#fff0f0"
+                stroke="var(--danger)"
+                fill="var(--danger-soft)"
                 name="Error rate"
               />
             </AreaChart>

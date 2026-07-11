@@ -1,17 +1,17 @@
+// Mirrors ProjectRow.jsx's local ProjectDetailItem (same label/value/icon
+// shape) so it stays on the shared token-driven `.project-detail-item`
+// class instead of the hardcoded light-theme Tailwind utilities (bg-white,
+// text-gray-*) this component previously used, which rendered a white card
+// against the app's dark theme.
 const InfoCard = ({ icon: Icon, label, value }) => {
   return (
-    <>
-      <div className="rounded-lg border bg-white p-4">
-        <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-500">
-          <Icon className="text-gray-400" />
-          {label}
-        </div>
-
-        <p className="break-all text-sm font-semibold text-gray-900">
-          {value || "-"}
-        </p>
-      </div>
-    </>
+    <div className="project-detail-item">
+      <span>
+        <Icon />
+        {label}
+      </span>
+      <strong>{value || "-"}</strong>
+    </div>
   );
 };
 export default InfoCard;

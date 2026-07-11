@@ -6,6 +6,9 @@ export async function listIssues({
   status,
   severity,
   projectId,
+  search,
+  sortBy,
+  order,
 } = {}) {
   const { data } = await apiClient.get("/issues", {
     params: {
@@ -14,6 +17,9 @@ export async function listIssues({
       status,
       severity,
       projectId,
+      search,
+      sortBy,
+      order,
     },
   });
 

@@ -141,7 +141,7 @@ export function IssueDetailPage() {
           eventPagination={eventPagination}
           hasMoreEvents={Boolean(
             eventPagination &&
-              (eventPagination.page ?? 1) < (eventPagination.totalPages ?? 1),
+            (eventPagination.page ?? 1) < (eventPagination.totalPages ?? 1),
           )}
           onLoadMoreEvents={loadMoreEvents}
         />

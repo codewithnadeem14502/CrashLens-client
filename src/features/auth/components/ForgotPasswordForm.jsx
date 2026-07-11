@@ -1,23 +1,21 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { FiArrowRight, FiLock, FiRefreshCw } from "react-icons/fi";
-import { login } from "../api/authService";
+import { useNavigate } from "react-router-dom";
+import { FiArrowRight, FiCheck, FiRefreshCw } from "react-icons/fi";
+import { updatePassword } from "../api/authService";
 import { getApiError } from "../../../shared/api/errors";
-import { useAuth } from "../../../shared/auth/useAuth";
 import { useToast } from "../../../shared/components/useToast";
 import { FormField } from "../../../shared/ui/FormField";
 import { PasswordField } from "../../../shared/ui/PasswordField";
 
-const initialLogin = {
+const initialForm = {
   email: "",
-  password: "",
-  organizationSlug: "",
+  newPassword: "",
+  confirmPassword: "",
 };
 
-export function LoginForm() {
-  const [form, setForm] = useState(initialLogin);
+export function ForgotPasswordForm() {
+  const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { persistSession } = useAuth();
   const { notify } = useToast();
   const navigate = useNavigate();
 
@@ -26,20 +24,32 @@ export function LoginForm() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+
+    if (form.newPassword !== form.confirmPassword) {
+      notify({
+        title: "Passwords don't match",
+        description: "Re-enter the new password in both fields.",
+        tone: "danger",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const payload = await login(form);
-      persistSession(payload);
+      await updatePassword({
+        email: form.email,
+        newPassword: form.newPassword,
+      });
       notify({
-        title: "Welcome back",
-        description: "Your CrashLens workspace is ready.",
+        title: "Password updated",
+        description: "Sign in with your new password.",
         tone: "success",
       });
-      navigate("/workspace/projects");
+      navigate("/auth");
     } catch (error) {
       notify({
-        title: "Login failed",
+        title: "Couldn't update password",
         description: getApiError(error),
         tone: "danger",
       });
@@ -59,27 +69,24 @@ export function LoginForm() {
         required
       />
       <PasswordField
-        label="Password"
-        value={form.password}
-        onChange={update("password")}
-        placeholder="Password"
+        label="New password"
+        value={form.newPassword}
+        onChange={update("newPassword")}
+        placeholder="At least 8 characters"
         required
       />
-      <FormField
-        label="Organization slug"
-        value={form.organizationSlug}
-        onChange={update("organizationSlug")}
-        placeholder="Organization-slug"
+      <PasswordField
+        label="Confirm new password"
+        value={form.confirmPassword}
+        onChange={update("confirmPassword")}
+        placeholder="Re-enter new password"
         required
       />
       <button className="primary-button" type="submit" disabled={isSubmitting}>
-        {isSubmitting ? <FiRefreshCw className="spin" /> : <FiLock />}
-        Sign in
+        {isSubmitting ? <FiRefreshCw className="spin" /> : <FiCheck />}
+        Update password
         <FiArrowRight />
       </button>
-      <Link className="text-button" to="/auth/forgot-password">
-        Forgot password?
-      </Link>
     </form>
   );
 }

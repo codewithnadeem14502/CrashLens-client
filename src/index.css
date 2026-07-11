@@ -1,12 +1,54 @@
 @import "tailwindcss";
 
+/* Wires the existing CSS custom-property token layer (styles/app.css,
+   imported separately by app/App.jsx - CSS custom-property resolution via
+   var() doesn't depend on file import order, only that the declaring rule
+   exists somewhere in the final stylesheet, so no import is needed here)
+   into Tailwind v4's theme namespace, so utility classes like
+   `bg-brand-orange`/`text-danger` become available without introducing a
+   second, parallel color system - deliberately colors only for this pass,
+   not spacing/typography. */
+@theme {
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-primary-deep: var(--accent-primary-deep);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-pink: var(--accent-pink);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-orange-deep: var(--brand-orange-deep);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-deep: var(--brand-blue-deep);
+  --color-status-info: var(--status-info);
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-error: var(--status-error);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-deep: var(--danger-deep);
+  --color-text: var(--text);
+  --color-text-soft: var(--text-soft);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-page: var(--page);
+  --color-app-background: var(--app-background);
+  --color-app-surface: var(--app-surface);
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-hover: var(--surface-hover);
+  --color-info-soft: var(--info-soft);
+  --color-orange-soft: var(--orange-soft);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+}
+
 :root {
-  color: #17181c;
-  background: #fafafa;
-  font-family:
-    "ixi-type", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
-    "Noto Color Emoji";
+  color: var(--text);
+  background: var(--page);
+  font-family: var(--font-ui);
+  font-size: 87.5%;
+  line-height: 1.4;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -19,14 +61,14 @@
 
 html {
   min-width: 320px;
-  background: #fafafa;
+  background: var(--page);
 }
 
 body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background: #fafafa;
+  background: var(--page);
 }
 
 button,

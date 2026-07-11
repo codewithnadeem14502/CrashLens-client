@@ -22,6 +22,10 @@ export const Permissions = Object.freeze({
   INTEGRATION_MANAGE: "integration:manage",
   ISSUE_VIEW: "issue:view",
   ISSUE_UPDATE: "issue:update",
+  MONITOR_VIEW: "monitor:view",
+  MONITOR_MANAGE: "monitor:manage",
+  ALERT_VIEW: "alert:view",
+  ALERT_MANAGE: "alert:manage",
 });
 
 export const RolePermissions = Object.freeze({
@@ -37,6 +41,10 @@ export const RolePermissions = Object.freeze({
     Permissions.MEMBER_REMOVE,
     Permissions.ISSUE_VIEW,
     Permissions.ISSUE_UPDATE,
+    Permissions.MONITOR_VIEW,
+    Permissions.MONITOR_MANAGE,
+    Permissions.ALERT_VIEW,
+    Permissions.ALERT_MANAGE,
   ]),
   [Roles.DEVELOPER]: Object.freeze([
     Permissions.ORGANIZATION_VIEW,
@@ -44,11 +52,17 @@ export const RolePermissions = Object.freeze({
     Permissions.MEMBER_VIEW,
     Permissions.ISSUE_VIEW,
     Permissions.ISSUE_UPDATE,
+    Permissions.MONITOR_VIEW,
+    Permissions.MONITOR_MANAGE,
+    Permissions.ALERT_VIEW,
+    Permissions.ALERT_MANAGE,
   ]),
   [Roles.VIEWER]: Object.freeze([
     Permissions.ORGANIZATION_VIEW,
     Permissions.PROJECT_VIEW,
     Permissions.ISSUE_VIEW,
+    Permissions.MONITOR_VIEW,
+    Permissions.ALERT_VIEW,
   ]),
 });
 

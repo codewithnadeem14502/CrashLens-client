@@ -56,10 +56,15 @@ export function IssueDetailPanel({
   const runtime = detail.runtime ?? latestEvent.runtime ?? {};
   const topFrame = detail.topFrame ?? latestEvent.topFrame ?? {};
   const stackTrace =
-    detail.stackTrace ?? detail.stack ?? latestEvent.stackTrace ?? latestEvent.stack;
+    detail.stackTrace ??
+    detail.stack ??
+    latestEvent.stackTrace ??
+    latestEvent.stack;
   const stackFrames = parseStackFrames(stackTrace);
-  const eventId = latestEvent.sourceEventId ?? latestEvent.id ?? latestEvent._id;
-  const title = issue.title ?? issue.message ?? detail.message ?? "Untitled issue";
+  const eventId =
+    latestEvent.sourceEventId ?? latestEvent.id ?? latestEvent._id;
+  const title =
+    issue.title ?? issue.message ?? detail.message ?? "Untitled issue";
   const message =
     detail.normalizedMessage ??
     detail.message ??
@@ -67,7 +72,8 @@ export function IssueDetailPanel({
     "No message returned for this issue.";
   const errorName = issue.errorName ?? detail.errorName ?? "Error";
   const severity = issue.severity ?? detail.severity ?? "medium";
-  const environment = detail.environment ?? detail.lastEnvironment ?? "No environment";
+  const environment =
+    detail.environment ?? detail.lastEnvironment ?? "No environment";
   const release = detail.release ?? detail.lastRelease ?? "No release";
   const occurredAt = detail.occurredAt ?? issue.lastSeen ?? issue.updatedAt;
 
@@ -90,7 +96,9 @@ export function IssueDetailPanel({
         </div>
         <div className="issue-hero-stat">
           <span>Events</span>
-          <strong>{issue.occurrenceCount ?? eventPagination?.total ?? events.length}</strong>
+          <strong>
+            {issue.occurrenceCount ?? eventPagination?.total ?? events.length}
+          </strong>
         </div>
       </section>
 
@@ -106,14 +114,20 @@ export function IssueDetailPanel({
                 <span className="exception-type">{errorName}</span>
                 <strong>{message}</strong>
               </div>
-              <span className="exception-source">{formatFrameSource(topFrame)}</span>
+              <span className="exception-source">
+                {formatFrameSource(topFrame)}
+              </span>
             </div>
           </section>
 
           <section className="issue-block">
             <div className="issue-section-heading">
               <h3>Stack trace</h3>
-              <span>{stackFrames.length ? `${stackFrames.length} frames` : "Unavailable"}</span>
+              <span>
+                {stackFrames.length
+                  ? `${stackFrames.length} frames`
+                  : "Unavailable"}
+              </span>
             </div>
             {stackFrames.length ? (
               <div className="stack-frame-list">
@@ -133,7 +147,9 @@ export function IssueDetailPanel({
             ) : stackTrace ? (
               <pre className="stack-trace">{stackTrace}</pre>
             ) : (
-              <div className="empty-state compact">No stack trace returned for this issue.</div>
+              <div className="empty-state compact">
+                No stack trace returned for this issue.
+              </div>
             )}
           </section>
 
@@ -147,7 +163,11 @@ export function IssueDetailPanel({
                 label="Function"
                 value={topFrame.function ?? "No function"}
               />
-              <DetailItem icon={FiLayers} label="File" value={topFrame.file ?? "No file"} />
+              <DetailItem
+                icon={FiLayers}
+                label="File"
+                value={topFrame.file ?? "No file"}
+              />
               <DetailItem
                 icon={FiNavigation}
                 label="Line / Column"
@@ -159,7 +179,9 @@ export function IssueDetailPanel({
           <section className="issue-block">
             <div className="issue-section-heading">
               <h3>Occurrence history</h3>
-              {eventPagination ? <span>{eventPagination.total} events</span> : null}
+              {eventPagination ? (
+                <span>{eventPagination.total} events</span>
+              ) : null}
             </div>
             {isLoading && events.length === 0 ? (
               <div className="empty-state compact">Loading events...</div>
@@ -172,7 +194,9 @@ export function IssueDetailPanel({
                   >
                     <div className="event-row-header">
                       <strong>{event.errorName ?? "Issue event"}</strong>
-                      <span>{formatDate(event.occurredAt ?? event.createdAt)}</span>
+                      <span>
+                        {formatDate(event.occurredAt ?? event.createdAt)}
+                      </span>
                     </div>
                     <p>
                       {event.normalizedMessage ??
@@ -181,7 +205,8 @@ export function IssueDetailPanel({
                     </p>
                     <div className="event-row-meta">
                       <span>
-                        {event.request?.method ?? "No method"} {event.request?.url ?? ""}
+                        {event.request?.method ?? "No method"}{" "}
+                        {event.request?.url ?? ""}
                       </span>
                       <span>{event.environment ?? "No environment"}</span>
                       <span>{event.release ?? "No release"}</span>
@@ -197,7 +222,9 @@ export function IssueDetailPanel({
                 </div>
               </div>
             ) : (
-              <div className="empty-state compact">No events returned for this issue.</div>
+              <div className="empty-state compact">
+                No events returned for this issue.
+              </div>
             )}
           </section>
         </div>
@@ -209,10 +236,20 @@ export function IssueDetailPanel({
             <ContextRow
               icon={FiGitCommit}
               label="Occurrences"
-              value={issue.occurrenceCount ?? eventPagination?.total ?? events.length}
+              value={
+                issue.occurrenceCount ?? eventPagination?.total ?? events.length
+              }
             />
-            <ContextRow icon={FiClock} label="Occurred" value={formatDate(occurredAt)} />
-            <ContextRow icon={FiCode} label="Event" value={eventId ?? "No event id"} />
+            <ContextRow
+              icon={FiClock}
+              label="Occurred"
+              value={formatDate(occurredAt)}
+            />
+            <ContextRow
+              icon={FiCode}
+              label="Event"
+              value={eventId ?? "No event id"}
+            />
           </section>
 
           <section className="issue-context-section">
@@ -225,17 +262,39 @@ export function IssueDetailPanel({
             <ContextRow
               icon={FiNavigation}
               label="Org"
-              value={organization?.name ?? detail.organizationId ?? "No organization"}
+              value={
+                organization?.name ?? detail.organizationId ?? "No organization"
+              }
             />
-            <ContextRow icon={FiMonitor} label="Runtime" value={formatRuntime(runtime)} />
-            <ContextRow icon={FiServer} label="Server" value={formatServer(server)} />
+            <ContextRow
+              icon={FiMonitor}
+              label="Runtime"
+              value={formatRuntime(runtime)}
+            />
+            <ContextRow
+              icon={FiServer}
+              label="Server"
+              value={formatServer(server)}
+            />
           </section>
 
           <section className="issue-context-section">
             <h3>Request</h3>
-            <ContextRow icon={FiGlobe} label="Method" value={request.method ?? "No method"} />
-            <ContextRow icon={FiNavigation} label="URL" value={request.url ?? "No URL"} />
-            <ContextRow icon={FiServer} label="IP" value={request.ip ?? "No IP"} />
+            <ContextRow
+              icon={FiGlobe}
+              label="Method"
+              value={request.method ?? "No method"}
+            />
+            <ContextRow
+              icon={FiNavigation}
+              label="URL"
+              value={request.url ?? "No URL"}
+            />
+            <ContextRow
+              icon={FiServer}
+              label="IP"
+              value={request.ip ?? "No IP"}
+            />
             <ContextRow
               icon={FiMonitor}
               label="Agent"

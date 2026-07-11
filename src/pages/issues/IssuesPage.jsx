@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../shared/auth/useAuth";
 import { useToast } from "../../shared/components/useToast";
@@ -56,8 +56,23 @@ const Issues = () => {
   });
   const [issuePage, setIssuePage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [appliedFilters, setAppliedFilters] = useState(defaultIssueFilters);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Debounce free-text search before it drives a re-fetch, so we don't hit
+  // the API on every keystroke. Also resets pagination in the same tick -
+  // a new search term can change which page is "page 1" for the matching
+  // set, so the user shouldn't land on a now-nonexistent page.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+      setIssuePage(1);
+    }, 350);
+
+    return () => clearTimeout(handle);
+  }, [searchQuery]);
+
   const canViewIssue = useMemo(
     () => hasPermission(session, Permissions.ISSUE_VIEW),
     [session],
@@ -68,19 +83,43 @@ const Issues = () => {
     [session],
   );
 
+  // Guards against overlapping requests resolving out of order (e.g. type
+  // "abc" [fires a request], then "abcd" before the first one resolves -
+  // without this, if the "abc" response happens to arrive after the
+  // "abcd" one, it would silently overwrite the newer, correct results).
+  // Only the response for the most recently *fired* request is ever
+  // applied, regardless of resolution order.
+  const latestRequestIdRef = useRef(0);
+
   const fetchIssues = useCallback(async () => {
     if (!organizationId) {
       setIsLoading(false);
       return;
     }
 
+    const requestId = (latestRequestIdRef.current += 1);
     setIsLoading(true);
 
     try {
+      const { sortBy, order } = mapSortToQuery(appliedFilters.sort);
       const issueData = await listIssues({
         page: issuePage,
         limit: ISSUE_PAGE_LIMIT,
+        status:
+          appliedFilters.status === "all" ? undefined : appliedFilters.status,
+        severity:
+          appliedFilters.severity === "all"
+            ? undefined
+            : appliedFilters.severity,
+        search: debouncedSearch || undefined,
+        sortBy,
+        order,
       });
+
+      if (requestId !== latestRequestIdRef.current) {
+        return;
+      }
+
       const nextIssues = Array.isArray(issueData.issues)
         ? issueData.issues
         : [];
@@ -94,15 +133,29 @@ const Issues = () => {
         },
       );
     } catch (error) {
+      if (requestId !== latestRequestIdRef.current) {
+        return;
+      }
+
       notify({
         title: "Could not load issues",
         description: getApiError(error),
         tone: "danger",
       });
     } finally {
-      setIsLoading(false);
+      if (requestId === latestRequestIdRef.current) {
+        setIsLoading(false);
+      }
     }
-  }, [issuePage, organizationId, notify]);
+  }, [
+    issuePage,
+    organizationId,
+    notify,
+    appliedFilters.status,
+    appliedFilters.severity,
+    appliedFilters.sort,
+    debouncedSearch,
+  ]);
 
   const handleUpdateIssueStatus = async (issueId, status) => {
     try {
@@ -129,34 +182,20 @@ const Issues = () => {
     }
   };
 
+  // status/severity/search filters and lastSeen/occurrenceCount sorting are
+  // now all applied server-side (see fetchIssues) - the API returns exactly
+  // the matching page, so no client-side re-filtering is needed here.
+  // "title" sort has no backend equivalent field, so that one mode is
+  // applied client-side, over the already-server-filtered page only.
   const visibleIssues = useMemo(() => {
-    const search = searchQuery.trim().toLowerCase();
+    if (appliedFilters.sort === "title-asc" || appliedFilters.sort === "title-desc") {
+      return [...issues].sort((left, right) =>
+        compareIssues(left, right, appliedFilters.sort),
+      );
+    }
 
-    return [...issues]
-      .filter((issue) => {
-        if (!search) return true;
-
-        return (
-          issue.title?.toLowerCase().includes(search) ||
-          issue.message?.toLowerCase().includes(search) ||
-          issue.errorName?.toLowerCase().includes(search) ||
-          issue.culprit?.toLowerCase().includes(search) ||
-          issue.status?.toLowerCase().includes(search) ||
-          issue.severity?.toLowerCase().includes(search)
-        );
-      })
-      .filter(
-        (issue) =>
-          appliedFilters.status === "all" ||
-          issue.status === appliedFilters.status,
-      )
-      .filter(
-        (issue) =>
-          appliedFilters.severity === "all" ||
-          issue.severity === appliedFilters.severity,
-      )
-      .sort((left, right) => compareIssues(left, right, appliedFilters.sort));
-  }, [appliedFilters, issues, searchQuery]);
+    return issues;
+  }, [issues, appliedFilters.sort]);
 
   const applyFilters = (nextFilters) => {
     setIssuePage(1);
@@ -191,7 +230,7 @@ const Issues = () => {
             onChange={setSearchQuery}
             activeStatus={appliedFilters.status}
             activeSeverity={appliedFilters.severity}
-            resultCount={visibleIssues.length}
+            resultCount={issuePagination.total}
           />
           <IssuesFilters
             filters={appliedFilters}
@@ -226,40 +265,38 @@ const defaultIssueFilters = Object.freeze({
   sort: "newest",
 });
 
+// Maps the UI's combined sort mode to issue-service's actual sortBy/order
+// query params (GET /api/issues - Joi-validated to
+// lastSeen|firstSeen|occurrenceCount|createdAt|severity). "title" isn't a
+// real backend field (it's derived client-side from title ?? message), so
+// those two modes intentionally return no sortBy/order - the server falls
+// back to its default (lastSeen desc) and the title ordering is applied
+// client-side afterward, over just the returned page (see visibleIssues).
+function mapSortToQuery(sortMode) {
+  switch (sortMode) {
+    case "oldest":
+      return { sortBy: "lastSeen", order: "asc" };
+    case "occurrences-desc":
+      return { sortBy: "occurrenceCount", order: "desc" };
+    case "occurrences-asc":
+      return { sortBy: "occurrenceCount", order: "asc" };
+    case "title-asc":
+    case "title-desc":
+      return {};
+    case "newest":
+    default:
+      return { sortBy: "lastSeen", order: "desc" };
+  }
+}
+
+// Only title-asc/title-desc ever reach this (see visibleIssues) - every
+// other sort mode is now handled server-side via mapSortToQuery.
 function compareIssues(left, right, sortMode) {
-  if (sortMode === "title-asc") {
-    return getIssueTitle(left).localeCompare(getIssueTitle(right));
-  }
-
-  if (sortMode === "title-desc") {
-    return getIssueTitle(right).localeCompare(getIssueTitle(left));
-  }
-
-  if (sortMode === "occurrences-desc") {
-    return getOccurrenceCount(right) - getOccurrenceCount(left);
-  }
-
-  if (sortMode === "occurrences-asc") {
-    return getOccurrenceCount(left) - getOccurrenceCount(right);
-  }
-
-  if (sortMode === "oldest") {
-    return getIssueTime(left) - getIssueTime(right);
-  }
-
-  return getIssueTime(right) - getIssueTime(left);
+  return sortMode === "title-desc"
+    ? getIssueTitle(right).localeCompare(getIssueTitle(left))
+    : getIssueTitle(left).localeCompare(getIssueTitle(right));
 }
 
 function getIssueTitle(issue) {
   return issue.title ?? issue.message ?? "";
-}
-
-function getIssueTime(issue) {
-  return new Date(
-    issue.lastSeen ?? issue.updatedAt ?? issue.createdAt ?? 0,
-  ).getTime();
-}
-
-function getOccurrenceCount(issue) {
-  return Number(issue.occurrenceCount ?? 0);
 }
