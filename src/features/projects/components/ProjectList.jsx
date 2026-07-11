@@ -1,12 +1,26 @@
 import { Fragment, useState } from "react";
-import { FiChevronDown, FiEdit2 } from "react-icons/fi";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import {
+  FiChevronDown,
+  FiEdit2,
+  FiFolder,
+  FiMoreVertical,
+  FiPlus,
+  FiSearch,
+  FiTrash2,
+} from "react-icons/fi";
 import ProjectRow from "./ProjectRow";
+import { ConfirmProjectAction } from "./ConfirmProjectAction";
+import { EmptyState } from "../../../shared/components/EmptyState";
 
 const ProjectList = ({
   projects,
   isLoading,
+  hasAnyProjects,
+  canCreateProject,
   canUpdateProjects,
   canDeleteProjects,
+  onCreateProject,
   onProjectUpdate,
   onDeleteProject,
   onRegenerateDSN,
@@ -22,7 +36,28 @@ const ProjectList = ({
   }
 
   if (!projects.length) {
-    return <div className="project-table-state">No projects found.</div>;
+    if (hasAnyProjects) {
+      return (
+        <EmptyState
+          icon={FiSearch}
+          title="No projects match your filters"
+          description="Try adjusting or clearing your search and filters."
+        />
+      );
+    }
+
+    return (
+      <EmptyState
+        icon={FiFolder}
+        title="No projects yet"
+        description="Create your first project to start receiving errors, performance data, and logs."
+        actions={
+          canCreateProject
+            ? [{ label: "Create Project", icon: <FiPlus />, onClick: onCreateProject }]
+            : undefined
+        }
+      />
+    );
   }
 
   return (
@@ -76,15 +111,14 @@ const ProjectList = ({
                   <td>{formatProjectDate(project.createdAt)}</td>
                   <td>
                     <div className="project-row-actions">
-                      {canUpdateProjects ? (
-                        <button
-                          className="icon-button"
-                          type="button"
-                          onClick={() => onProjectUpdate(projectId)}
-                          aria-label={`Edit ${project.name}`}
-                        >
-                          <FiEdit2 />
-                        </button>
+                      {canUpdateProjects || canDeleteProjects ? (
+                        <ProjectActionsMenu
+                          project={project}
+                          canUpdate={canUpdateProjects}
+                          canDelete={canDeleteProjects}
+                          onEdit={() => onProjectUpdate(projectId)}
+                          onDelete={() => onDeleteProject(projectId)}
+                        />
                       ) : null}
                     </div>
                   </td>
@@ -94,11 +128,7 @@ const ProjectList = ({
                     <td colSpan="7">
                       <ProjectRow
                         project={project}
-                        onProjectUpdate={onProjectUpdate}
-                        onDeleteProject={onDeleteProject}
                         onRegenerateDSN={onRegenerateDSN}
-                        canUpdate={canUpdateProjects}
-                        canDelete={canDeleteProjects}
                       />
                     </td>
                   </tr>
@@ -111,6 +141,58 @@ const ProjectList = ({
     </div>
   );
 };
+
+function ProjectActionsMenu({ project, canUpdate, canDelete, onEdit, onDelete }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  return (
+    <>
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild>
+          <button
+            className="icon-button"
+            type="button"
+            aria-label={`Actions for ${project.name}`}
+          >
+            <FiMoreVertical />
+          </button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content
+            className="action-menu-content"
+            align="end"
+            sideOffset={6}
+          >
+            {canUpdate ? (
+              <DropdownMenu.Item className="action-menu-item" onSelect={onEdit}>
+                <FiEdit2 />
+                Edit
+              </DropdownMenu.Item>
+            ) : null}
+            {canDelete ? (
+              <DropdownMenu.Item
+                className="action-menu-item danger"
+                onSelect={() => setConfirmOpen(true)}
+              >
+                <FiTrash2 />
+                Delete
+              </DropdownMenu.Item>
+            ) : null}
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+
+      <ConfirmProjectAction
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Are you sure?"
+        description={`This will archive ${project.name}.`}
+        actionLabel="Delete"
+        onConfirm={onDelete}
+      />
+    </>
+  );
+}
 
 function formatProjectDate(value) {
   if (!value) {

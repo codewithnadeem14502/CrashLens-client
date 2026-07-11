@@ -77,9 +77,12 @@ export function LoginForm() {
         Sign in
         <FiArrowRight />
       </button>
-      <Link className="text-button" to="/auth/forgot-password">
-        Forgot password?
-      </Link>
+      <div className="login-help-row">
+        <span>Lost password?</span>
+        <Link className="login-help-link" to="/auth/forgot-password">
+          Click forgot password
+        </Link>
+      </div>
     </form>
   );
 }

@@ -12,7 +12,7 @@ export function RoleSelect({ value, options, disabled, onValueChange }) {
       </Select.Trigger>
       <Select.Portal>
         <Select.Content className="select-content" position="popper" sideOffset={6}>
-          <Select.Viewport>
+          <Select.Viewport className="select-viewport">
             {options.map((option) => (
               <Select.Item className="select-item" value={option.value} key={option.value}>
                 <Select.ItemText>{option.label}</Select.ItemText>

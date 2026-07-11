@@ -184,16 +184,18 @@ export function MembersPage() {
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
               >
-                <Dialog.Trigger asChild>
-                  <button
-                    className="icon-button member-create-icon"
-                    type="button"
-                    aria-label="Create member"
-                    title="Create member"
-                  >
-                    <FiUserPlus />
-                  </button>
-                </Dialog.Trigger>
+                {members.length > 0 ? (
+                  <Dialog.Trigger asChild>
+                    <button
+                      className="icon-button member-create-icon"
+                      type="button"
+                      aria-label="Create member"
+                      title="Create member"
+                    >
+                      <FiUserPlus />
+                    </button>
+                  </Dialog.Trigger>
+                ) : null}
                 <Dialog.Portal>
                   <Dialog.Overlay className="dialog-overlay" />
                   <Dialog.Content className="dialog-content">
@@ -240,8 +242,10 @@ export function MembersPage() {
             searchQuery={searchQuery}
             canUpdateRoles={canUpdateRoles}
             canDeleteMembers={canDeleteMembers}
+            canCreateMembers={canCreateMembers}
             onRoleChange={handleRoleChange}
             onDeleteMember={handleDeleteMember}
+            onCreateMember={() => setIsCreateModalOpen(true)}
           />
         </section>
       </main>

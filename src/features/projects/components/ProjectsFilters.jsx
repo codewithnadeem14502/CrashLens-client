@@ -3,13 +3,13 @@ import * as Popover from "@radix-ui/react-popover";
 import { FiFilter } from "react-icons/fi";
 import { RoleSelect } from "../../../shared/ui/RoleSelect";
 
-export function IssuesFilters({
+export function ProjectsFilters({
   filters,
   onApplyFilters,
   onResetFilters,
+  environmentOptions,
   statusOptions,
-  severityOptions,
-  sortOptions,
+  platformOptions,
 }) {
   const [draftFilters, setDraftFilters] = useState(filters);
 
@@ -26,7 +26,10 @@ export function IssuesFilters({
     onResetFilters();
   };
 
-  const hasActiveFilters = filters.status !== "all" || filters.severity !== "all";
+  const hasActiveFilters =
+    filters.environment !== "all" ||
+    filters.status !== "all" ||
+    filters.platform !== "all";
 
   return (
     <Popover.Root
@@ -42,7 +45,7 @@ export function IssuesFilters({
             hasActiveFilters ? "icon-button has-active-filters" : "icon-button"
           }
           type="button"
-          aria-label="Open issue filters"
+          aria-label="Open project filters"
           title={hasActiveFilters ? "Filters applied" : "Open filters"}
         >
           <FiFilter />
@@ -57,9 +60,17 @@ export function IssuesFilters({
         >
           <div className="filter-popover-header">
             <strong>Filters</strong>
-            <span>Issues</span>
+            <span>Projects</span>
           </div>
           <div className="filter-popover-fields">
+            <div className="issue-filter-field">
+              <span>Environment</span>
+              <RoleSelect
+                value={draftFilters.environment}
+                options={environmentOptions}
+                onValueChange={updateDraftFilter("environment")}
+              />
+            </div>
             <div className="issue-filter-field">
               <span>Status</span>
               <RoleSelect
@@ -69,19 +80,11 @@ export function IssuesFilters({
               />
             </div>
             <div className="issue-filter-field">
-              <span>Severity</span>
+              <span>Platform</span>
               <RoleSelect
-                value={draftFilters.severity}
-                options={severityOptions}
-                onValueChange={updateDraftFilter("severity")}
-              />
-            </div>
-            <div className="issue-filter-field sort-field">
-              <span>Sort</span>
-              <RoleSelect
-                value={draftFilters.sort}
-                options={sortOptions}
-                onValueChange={updateDraftFilter("sort")}
+                value={draftFilters.platform}
+                options={platformOptions}
+                onValueChange={updateDraftFilter("platform")}
               />
             </div>
           </div>

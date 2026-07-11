@@ -18,7 +18,6 @@ export function IssueRow({
   const lastSeen = issue.lastSeen ?? issue.updatedAt ?? issue.createdAt;
   const createdAt = issue.firstSeen ?? issue.createdAt ?? lastSeen;
   const eventCount = Number(issue.occurrenceCount ?? issue.eventCount ?? 0);
-  const userCount = Number(issue.userCount ?? issue.usersAffected ?? 0);
   const severity = issue.severity ?? "medium";
   const status = issue.status ?? "unresolved";
 
@@ -59,7 +58,6 @@ export function IssueRow({
       </td>
       <td>{formatAge(createdAt)}</td>
       <td>{eventCount}</td>
-      <td>{userCount}</td>
       <td>
         <span className={`severity-pill ${severity}`}>{severity}</span>
       </td>

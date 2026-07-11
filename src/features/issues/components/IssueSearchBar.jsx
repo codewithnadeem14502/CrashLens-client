@@ -6,10 +6,20 @@ export function IssueSearchBar({
   activeStatus,
   activeSeverity,
   resultCount,
+  onClearStatus,
+  onClearSeverity,
 }) {
   const chips = [
-    activeStatus !== "all" ? `is:${activeStatus}` : null,
-    activeSeverity !== "all" ? `severity:${activeSeverity}` : null,
+    activeStatus !== "all"
+      ? { key: "status", label: `is:${activeStatus}`, onRemove: onClearStatus }
+      : null,
+    activeSeverity !== "all"
+      ? {
+          key: "severity",
+          label: `severity:${activeSeverity}`,
+          onRemove: onClearSeverity,
+        }
+      : null,
   ].filter(Boolean);
 
   return (
@@ -18,16 +28,24 @@ export function IssueSearchBar({
         <FiSearch />
         <div className="issue-query-chips">
           {chips.map((chip) => (
-            <span className="query-chip" key={chip}>
-              {chip}
+            <span className="query-chip" key={chip.key}>
+              {chip.label}
+              <button
+                className="query-chip-remove"
+                type="button"
+                onClick={chip.onRemove}
+                aria-label={`Remove ${chip.label} filter`}
+              >
+                <FiX />
+              </button>
             </span>
           ))}
         </div>
         <input
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="Search by title, error, culprit, status, or severity"
-          type="search"
+          placeholder="Search by title, error"
+          type="text"
         />
         {value ? (
           <button

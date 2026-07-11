@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
-import { FiPlus, FiRefreshCw, FiTrash2 } from "react-icons/fi";
+import { FiGrid, FiPlus, FiTrash2 } from "react-icons/fi";
 import { WorkspaceLayout } from "../../shared/layouts/WorkspaceLayout";
 import { useAuth } from "../../shared/auth/useAuth";
 import { useToast } from "../../shared/components/useToast";
@@ -9,6 +9,7 @@ import { getApiError } from "../../shared/api/errors";
 import { hasPermission } from "../../shared/auth/permissions";
 import { Permissions } from "../../shared/auth/authEnums";
 import { FormField } from "../../shared/ui/FormField";
+import { EmptyState } from "../../shared/components/EmptyState";
 import {
   createDashboard,
   deleteDashboard,
@@ -77,6 +78,22 @@ function DashboardsPage() {
     }
   };
 
+  const createDashboardForm = (
+    <form className="field-row" onSubmit={handleCreate}>
+      <FormField
+        label="New dashboard name"
+        value={newName}
+        onChange={(event) => setNewName(event.target.value)}
+        placeholder="Production overview"
+        required
+      />
+      <button className="primary-button" type="submit" disabled={isCreating || !newName}>
+        <FiPlus />
+        Create dashboard
+      </button>
+    </form>
+  );
+
   return (
     <WorkspaceLayout onSignOut={signOut}>
       <main className="projects-page">
@@ -88,21 +105,7 @@ function DashboardsPage() {
           </div>
         </header>
 
-        {canManage ? (
-          <form className="field-row" onSubmit={handleCreate}>
-            <FormField
-              label="New dashboard name"
-              value={newName}
-              onChange={(event) => setNewName(event.target.value)}
-              placeholder="Production overview"
-              required
-            />
-            <button className="primary-button" type="submit" disabled={isCreating || !newName}>
-              <FiPlus />
-              Create dashboard
-            </button>
-          </form>
-        ) : null}
+        {canManage && dashboards.length > 0 ? createDashboardForm : null}
 
         <section className="projects-surface">
           <div className="projects-surface-heading">
@@ -110,24 +113,21 @@ function DashboardsPage() {
               <p className="eyebrow">Directory</p>
               <h2>{dashboards.length} dashboards</h2>
             </div>
-            <button
-              className="icon-button"
-              type="button"
-              onClick={fetchDashboards}
-              aria-label="Refresh dashboards"
-              title="Refresh dashboards"
-            >
-              <FiRefreshCw />
-            </button>
           </div>
 
           {isLoading ? <div className="project-table-state">Loading dashboards...</div> : null}
           {!isLoading && dashboards.length === 0 ? (
-            <div className="project-table-state">No dashboards yet.</div>
+            <EmptyState
+              icon={FiGrid}
+              title="No dashboards yet"
+              description="Build a custom dashboard from your issues, performance, logs, and monitor data."
+            >
+              {canManage ? createDashboardForm : null}
+            </EmptyState>
           ) : null}
           {!isLoading && dashboards.length > 0 ? (
             <div className="project-table-wrap">
-              <table className="project-table" aria-label="Dashboards">
+              <table className="project-table dashboard-table" aria-label="Dashboards">
                 <thead>
                   <tr>
                     <th scope="col">Name</th>
@@ -151,21 +151,22 @@ function DashboardsPage() {
                       </td>
                       <td>{dashboard.widgets.length}</td>
                       <td
-                        className="project-row-actions"
                         onClick={(event) => event.stopPropagation()}
                         onKeyDown={(event) => event.stopPropagation()}
                       >
-                        {canManage ? (
-                          <ConfirmDeleteAction
-                            title="Are you sure?"
-                            description={`This permanently deletes "${dashboard.name}" and its widgets.`}
-                            onConfirm={() => handleDelete(dashboard)}
-                          >
-                            <button className="icon-button" type="button" aria-label={`Delete ${dashboard.name}`}>
-                              <FiTrash2 />
-                            </button>
-                          </ConfirmDeleteAction>
-                        ) : null}
+                        <div className="project-row-actions">
+                          {canManage ? (
+                            <ConfirmDeleteAction
+                              title="Are you sure?"
+                              description={`This permanently deletes "${dashboard.name}" and its widgets.`}
+                              onConfirm={() => handleDelete(dashboard)}
+                            >
+                              <button className="icon-button" type="button" aria-label={`Delete ${dashboard.name}`}>
+                                <FiTrash2 />
+                              </button>
+                            </ConfirmDeleteAction>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { FiSearch, FiUserPlus, FiUsers } from "react-icons/fi";
 import { Pagination } from "../../../shared/components/Pagination";
+import { EmptyState } from "../../../shared/components/EmptyState";
 import { MemberRow } from "./MemberRow";
 import { getMemberId } from "../utils/memberFormatters";
 
@@ -11,8 +13,10 @@ export function MemberList({
   searchQuery,
   canUpdateRoles,
   canDeleteMembers,
+  canCreateMembers,
   onRoleChange,
   onDeleteMember,
+  onCreateMember,
 }) {
   const total = members.length;
   const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1);
@@ -34,9 +38,34 @@ export function MemberList({
     return members.slice(start, start + PAGE_SIZE);
   }, [currentPage, members]);
 
-  const emptyMessage = searchQuery
-    ? "No member matches your search."
-    : "No members available. Create a new member to get started.";
+  if (isLoading) {
+    return <div className="member-table-state">Loading members...</div>;
+  }
+
+  if (!members.length) {
+    if (searchQuery) {
+      return (
+        <EmptyState
+          icon={FiSearch}
+          title="No members match your search"
+          description="Try a different name or email."
+        />
+      );
+    }
+
+    return (
+      <EmptyState
+        icon={FiUsers}
+        title="No members yet"
+        description="Invite a teammate to give them access to this organization."
+        actions={
+          canCreateMembers
+            ? [{ label: "Invite member", icon: <FiUserPlus />, onClick: onCreateMember }]
+            : undefined
+        }
+      />
+    );
+  }
 
   return (
     <div className="member-directory">
@@ -53,45 +82,25 @@ export function MemberList({
             </tr>
           </thead>
           <tbody>
-            {isLoading ? (
-              <tr>
-                <td className="member-table-state" colSpan="6">
-                  Loading members...
-                </td>
-              </tr>
-            ) : null}
-            {!isLoading && !members.length ? (
-              <tr>
-                <td className="member-table-state" colSpan="6">
-                  {emptyMessage}
-                </td>
-              </tr>
-            ) : null}
-            {!isLoading
-              ? visibleMembers.map((member) => (
-                  <MemberRow
-                    key={getMemberId(member)}
-                    member={member}
-                    onRoleChange={onRoleChange}
-                    onDelete={onDeleteMember}
-                    canEdit={canUpdateRoles}
-                    canDelete={canDeleteMembers}
-                  />
-                ))
-              : null}
+            {visibleMembers.map((member) => (
+              <MemberRow
+                key={getMemberId(member)}
+                member={member}
+                onRoleChange={onRoleChange}
+                onDelete={onDeleteMember}
+                canEdit={canUpdateRoles}
+                canDelete={canDeleteMembers}
+              />
+            ))}
           </tbody>
         </table>
       </div>
       <div className="member-pagination-row">
-        {isLoading ? (
-          <span className="issue-pagination-status">Updating table...</span>
-        ) : null}
         <Pagination
           page={currentPage}
           totalPages={totalPages}
           total={total}
           limit={PAGE_SIZE}
-          disabled={isLoading}
           onPageChange={(nextPage) =>
             setPaginationState({
               page: nextPage,

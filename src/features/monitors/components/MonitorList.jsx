@@ -1,13 +1,36 @@
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
-import { FiTrash2 } from "react-icons/fi";
+import { FiPlus, FiRadio, FiTrash2 } from "react-icons/fi";
+import { EmptyState } from "../../../shared/components/EmptyState";
 
-export function MonitorList({ monitors, isLoading, canManage, onView, onDelete }) {
+export function MonitorList({
+  monitors,
+  isLoading,
+  canManage,
+  onView,
+  onDelete,
+  onCreateCron,
+  onCreateUptime,
+}) {
   if (isLoading) {
     return <div className="project-table-state">Loading monitors...</div>;
   }
 
   if (!monitors.length) {
-    return <div className="project-table-state">No monitors configured yet.</div>;
+    return (
+      <EmptyState
+        icon={FiRadio}
+        title="No monitoring configured yet"
+        description="Add a cron monitor to track scheduled job check-ins, or an uptime monitor to watch an HTTP endpoint."
+        actions={
+          canManage
+            ? [
+                { label: "Uptime monitor", icon: <FiPlus />, onClick: onCreateUptime },
+                { label: "Cron monitor", icon: <FiPlus />, onClick: onCreateCron },
+              ]
+            : undefined
+        }
+      />
+    );
   }
 
   return (
@@ -61,25 +84,26 @@ export function MonitorList({ monitors, isLoading, canManage, onView, onDelete }
                 </td>
                 <td>{monitor.environment}</td>
                 <td
-                  className="project-row-actions"
                   onClick={(event) => event.stopPropagation()}
                   onKeyDown={(event) => event.stopPropagation()}
                 >
-                  {canManage ? (
-                    <ConfirmDeleteAction
-                      title="Are you sure?"
-                      description={`This permanently deletes "${monitor.name}" and its check history.`}
-                      onConfirm={() => onDelete(monitor)}
-                    >
-                      <button
-                        className="icon-button"
-                        type="button"
-                        aria-label={`Delete ${monitor.name}`}
+                  <div className="project-row-actions">
+                    {canManage ? (
+                      <ConfirmDeleteAction
+                        title="Are you sure?"
+                        description={`This permanently deletes "${monitor.name}" and its check history.`}
+                        onConfirm={() => onDelete(monitor)}
                       >
-                        <FiTrash2 />
-                      </button>
-                    </ConfirmDeleteAction>
-                  ) : null}
+                        <button
+                          className="icon-button"
+                          type="button"
+                          aria-label={`Delete ${monitor.name}`}
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </ConfirmDeleteAction>
+                    ) : null}
+                  </div>
                 </td>
               </tr>
             );

@@ -26,6 +26,7 @@ export function WorkspaceLayout({ children, onSignOut }) {
   const profileName = session?.user?.name || session?.user?.email || "User";
   const profileRole =
     session?.membership?.role || session?.role || Roles.VIEWER;
+  const profileOrganization = session?.organization?.name || "";
 
   return (
     <main className="workspace-shell">
@@ -131,7 +132,11 @@ export function WorkspaceLayout({ children, onSignOut }) {
         </div>
         <div className="sidebar-bottom">
           <div
-            aria-label={`${profileName}, ${formatRole(profileRole)}`}
+            aria-label={
+              profileOrganization
+                ? `${profileName}, ${formatRole(profileRole)}, ${profileOrganization}`
+                : `${profileName}, ${formatRole(profileRole)}`
+            }
             className="sidebar-profile"
             tabIndex={0}
           >
@@ -141,6 +146,9 @@ export function WorkspaceLayout({ children, onSignOut }) {
             <div className="sidebar-profile-copy">
               <strong>{profileName}</strong>
               <span>{formatRole(profileRole)}</span>
+              {profileOrganization ? (
+                <span className="sidebar-profile-org">{profileOrganization}</span>
+              ) : null}
             </div>
           </div>
           <button

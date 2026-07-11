@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { WorkspaceLayout } from "../../shared/layouts/WorkspaceLayout";
 import { useAuth } from "../../shared/auth/useAuth";
 import { useToast } from "../../shared/components/useToast";
-import { FiRefreshCw, FiPlus, FiX } from "react-icons/fi";
+import { FiPlus, FiX } from "react-icons/fi";
 import * as Separator from "@radix-ui/react-separator";
 import * as Dialog from "@radix-ui/react-dialog";
 import ProjectList from "../../features/projects/components/ProjectList";
 import ProjectCreateForm from "../../features/projects/components/ProjectCreateForm";
+import { ProjectsFilters } from "../../features/projects/components/ProjectsFilters";
 import {
   createProject,
   deleteProject,
@@ -18,6 +19,32 @@ import { Permissions } from "../../shared/auth/authEnums";
 import { hasPermission } from "../../shared/auth/permissions";
 import { getApiError } from "../../shared/api/errors";
 import SearchBar from "../../shared/components/SearchBar";
+import {
+  projectEnvironmentOptions,
+  projectPlatformOptions,
+  projectStatusOptions,
+} from "../../shared/utils/constants";
+
+const defaultProjectFilters = Object.freeze({
+  environment: "all",
+  status: "all",
+  platform: "all",
+});
+
+const projectFilterEnvironmentOptions = [
+  { value: "all", label: "All environments" },
+  ...projectEnvironmentOptions,
+];
+
+const projectFilterStatusOptions = [
+  { value: "all", label: "All statuses" },
+  ...projectStatusOptions,
+];
+
+const projectFilterPlatformOptions = [
+  { value: "all", label: "All platforms" },
+  ...projectPlatformOptions,
+];
 
 const ProjectsPage = () => {
   const { session, signOut } = useAuth();
@@ -27,6 +54,7 @@ const ProjectsPage = () => {
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [appliedFilters, setAppliedFilters] = useState(defaultProjectFilters);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,6 +110,33 @@ const ProjectsPage = () => {
       );
     });
   }, []);
+
+  const filterScopedProjects = useMemo(() => {
+    return projects.filter((project) => {
+      if (
+        appliedFilters.environment !== "all" &&
+        project.environment !== appliedFilters.environment
+      ) {
+        return false;
+      }
+
+      if (
+        appliedFilters.status !== "all" &&
+        (project.status || "active") !== appliedFilters.status
+      ) {
+        return false;
+      }
+
+      if (
+        appliedFilters.platform !== "all" &&
+        project.settings?.platform !== appliedFilters.platform
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [projects, appliedFilters]);
 
   const openCreateForm = () => {
     setEditingProjectId(null);
@@ -208,7 +263,7 @@ const ProjectsPage = () => {
           </div>
 
           <div className="header-actions">
-            {canCreateProject && (
+            {canCreateProject && projects.length > 0 && (
               <button
                 className="primary-button"
                 type="button"
@@ -272,26 +327,27 @@ const ProjectsPage = () => {
         </Dialog.Root>
 
         <section className="projects-surface">
-          <div className="projects-toolbar">
-            <SearchBar
-              data={projects}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              filterFn={filterProjects}
-              onFilteredData={setFilteredProjects}
-              placeholder="Search projects..."
-            />
+          {projects.length > 0 ? (
+            <div className="projects-toolbar">
+              <SearchBar
+                data={filterScopedProjects}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                filterFn={filterProjects}
+                onFilteredData={setFilteredProjects}
+                placeholder="Search projects..."
+              />
 
-            <button
-              className="icon-button"
-              type="button"
-              onClick={fetchProjects}
-              aria-label="Refresh projects"
-              title="Refresh projects"
-            >
-              <FiRefreshCw />
-            </button>
-          </div>
+              <ProjectsFilters
+                filters={appliedFilters}
+                onApplyFilters={setAppliedFilters}
+                onResetFilters={() => setAppliedFilters(defaultProjectFilters)}
+                environmentOptions={projectFilterEnvironmentOptions}
+                statusOptions={projectFilterStatusOptions}
+                platformOptions={projectFilterPlatformOptions}
+              />
+            </div>
+          ) : null}
 
           <div className="projects-surface-heading">
             <div>
@@ -304,8 +360,11 @@ const ProjectsPage = () => {
           <ProjectList
             projects={filteredProjects}
             isLoading={isLoading}
+            hasAnyProjects={projects.length > 0}
+            canCreateProject={canCreateProject}
             canUpdateProjects={canUpdateProjects}
             canDeleteProjects={canDeleteProjects}
+            onCreateProject={openCreateForm}
             onProjectUpdate={openEditForm}
             onDeleteProject={handleDeleteProject}
             onRegenerateDSN={handleRegenerateDSN}

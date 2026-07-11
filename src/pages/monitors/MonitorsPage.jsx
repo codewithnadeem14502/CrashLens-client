@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Separator from "@radix-ui/react-separator";
 import * as Dialog from "@radix-ui/react-dialog";
-import { FiPlus, FiRefreshCw, FiX } from "react-icons/fi";
+import { FiPlus, FiX } from "react-icons/fi";
 import { WorkspaceLayout } from "../../shared/layouts/WorkspaceLayout";
 import { useAuth } from "../../shared/auth/useAuth";
 import { useToast } from "../../shared/components/useToast";
@@ -147,7 +147,7 @@ function MonitorsPage() {
             </p>
           </div>
 
-          {canManage ? (
+          {canManage && monitors.length > 0 ? (
             <div className="header-actions">
               <button className="secondary-button" type="button" onClick={() => setOpenForm("cron")}>
                 <FiPlus />
@@ -219,15 +219,6 @@ function MonitorsPage() {
               <p className="eyebrow">Directory</p>
               <h2>{monitors.length} monitors</h2>
             </div>
-            <button
-              className="icon-button"
-              type="button"
-              onClick={fetchMonitors}
-              aria-label="Refresh monitors"
-              title="Refresh monitors"
-            >
-              <FiRefreshCw />
-            </button>
           </div>
 
           <MonitorList
@@ -236,6 +227,8 @@ function MonitorsPage() {
             canManage={canManage}
             onView={handleView}
             onDelete={handleDelete}
+            onCreateCron={() => setOpenForm("cron")}
+            onCreateUptime={() => setOpenForm("uptime")}
           />
         </section>
       </main>

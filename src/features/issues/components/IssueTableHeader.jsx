@@ -6,7 +6,6 @@ export function IssueTableHeader() {
         <th scope="col">Last Seen</th>
         <th scope="col">Age</th>
         <th scope="col">Events</th>
-        <th scope="col">Users</th>
         <th scope="col">Severity</th>
         <th scope="col">Status</th>
       </tr>

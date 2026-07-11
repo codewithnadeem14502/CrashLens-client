@@ -27,3 +27,8 @@ export const projectPlatformOptions = [
   { value: "node", label: "Node.js" },
   { value: "javascript", label: "JavaScript" },
 ];
+
+export const projectStatusOptions = [
+  { value: "active", label: "Active" },
+  { value: "archived", label: "Archived" },
+];

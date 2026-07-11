@@ -1,13 +1,25 @@
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
-import { FiTrash2 } from "react-icons/fi";
+import { FiBell, FiPlus, FiTrash2 } from "react-icons/fi";
+import { EmptyState } from "../../../shared/components/EmptyState";
 
-export function AlertRuleList({ rules, isLoading, canManage, onView, onDelete }) {
+export function AlertRuleList({ rules, isLoading, canManage, onView, onDelete, onCreate }) {
   if (isLoading) {
     return <div className="project-table-state">Loading alert rules...</div>;
   }
 
   if (!rules.length) {
-    return <div className="project-table-state">No alert rules configured yet.</div>;
+    return (
+      <EmptyState
+        icon={FiBell}
+        title="No alert rules configured yet"
+        description="Create an alert rule to get notified when your issues, transactions, or monitors cross a threshold."
+        actions={
+          canManage
+            ? [{ label: "Create alert rule", icon: <FiPlus />, onClick: onCreate }]
+            : undefined
+        }
+      />
+    );
   }
 
   return (
@@ -46,21 +58,22 @@ export function AlertRuleList({ rules, isLoading, canManage, onView, onDelete })
               </td>
               <td>{rule.lastValue == null ? "-" : rule.lastValue}</td>
               <td
-                className="project-row-actions"
                 onClick={(event) => event.stopPropagation()}
                 onKeyDown={(event) => event.stopPropagation()}
               >
-                {canManage ? (
-                  <ConfirmDeleteAction
-                    title="Are you sure?"
-                    description={`This permanently deletes "${rule.name}" and its alert history.`}
-                    onConfirm={() => onDelete(rule)}
-                  >
-                    <button className="icon-button" type="button" aria-label={`Delete ${rule.name}`}>
-                      <FiTrash2 />
-                    </button>
-                  </ConfirmDeleteAction>
-                ) : null}
+                <div className="project-row-actions">
+                  {canManage ? (
+                    <ConfirmDeleteAction
+                      title="Are you sure?"
+                      description={`This permanently deletes "${rule.name}" and its alert history.`}
+                      onConfirm={() => onDelete(rule)}
+                    >
+                      <button className="icon-button" type="button" aria-label={`Delete ${rule.name}`}>
+                        <FiTrash2 />
+                      </button>
+                    </ConfirmDeleteAction>
+                  ) : null}
+                </div>
               </td>
             </tr>
           ))}

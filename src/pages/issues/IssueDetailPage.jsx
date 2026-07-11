@@ -110,42 +110,44 @@ export function IssueDetailPage() {
 
   return (
     <WorkspaceLayout onSignOut={signOut}>
-      <header className="workspace-header">
-        <div>
-          <button
-            className="text-button"
-            type="button"
-            onClick={() => navigate("/workspace/issues")}
-          >
-            <FiArrowLeft />
-            Back to issues
-          </button>
-          <p className="eyebrow">Issue detail</p>
-          <h1>Issue detail</h1>
-          <p className="muted">
-            Inspect occurrence history and grouped error metadata.
-          </p>
-        </div>
-      </header>
+      <main className="issue-detail-page">
+        <header className="workspace-header">
+          <div>
+            <button
+              className="text-button"
+              type="button"
+              onClick={() => navigate("/workspace/issues")}
+            >
+              <FiArrowLeft />
+              Back to issues
+            </button>
+            <p className="eyebrow">Issue detail</p>
+            <h1>Issue detail</h1>
+            <p className="muted">
+              Inspect occurrence history and grouped error metadata.
+            </p>
+          </div>
+        </header>
 
-      {isLoading && !issue ? (
-        <div className="empty-state">Loading issue detail...</div>
-      ) : (
-        <IssueDetailPanel
-          issue={issue}
-          events={events}
-          organization={organization}
-          project={project}
-          isLoading={isLoading}
-          isEventsLoading={isEventsLoading}
-          eventPagination={eventPagination}
-          hasMoreEvents={Boolean(
-            eventPagination &&
-            (eventPagination.page ?? 1) < (eventPagination.totalPages ?? 1),
-          )}
-          onLoadMoreEvents={loadMoreEvents}
-        />
-      )}
+        {isLoading && !issue ? (
+          <div className="empty-state">Loading issue detail...</div>
+        ) : (
+          <IssueDetailPanel
+            issue={issue}
+            events={events}
+            organization={organization}
+            project={project}
+            isLoading={isLoading}
+            isEventsLoading={isEventsLoading}
+            eventPagination={eventPagination}
+            hasMoreEvents={Boolean(
+              eventPagination &&
+              (eventPagination.page ?? 1) < (eventPagination.totalPages ?? 1),
+            )}
+            onLoadMoreEvents={loadMoreEvents}
+          />
+        )}
+      </main>
     </WorkspaceLayout>
   );
 }

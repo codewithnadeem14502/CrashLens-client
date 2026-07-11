@@ -34,3 +34,19 @@ export async function getOrganization(organizationId) {
   const { data } = await apiClient.get(`/auth/organizations/${organizationId}`);
   return data?.data?.organization ?? data?.organization ?? data?.data ?? null;
 }
+
+// Rotating refresh: auth-service issues a brand-new refreshToken alongside
+// the accessToken on every call and revokes the one that was spent, so the
+// caller must persist both returned values, not just the accessToken.
+export async function refreshAccessToken(refreshToken) {
+  const { data } = await apiClient.post("/auth/refresh-token", { refreshToken });
+  return data?.data ?? data;
+}
+
+// Best-effort: revokes the refresh token server-side so it can't be reused.
+// Identified purely by the refresh token in the body, no access token/auth
+// header needed - safe to call even if the access token already expired.
+export async function logout(refreshToken) {
+  const { data } = await apiClient.post("/auth/logout", { refreshToken });
+  return data;
+}

@@ -12,10 +12,10 @@ import {
   YAxis,
 } from "recharts";
 import {
+  FiActivity,
   FiAlertTriangle,
   FiClock,
   FiDatabase,
-  FiRefreshCw,
   FiTrendingUp,
   FiZap,
 } from "react-icons/fi";
@@ -26,6 +26,8 @@ import { getApiError } from "../../shared/api/errors";
 import { hasPermission } from "../../shared/auth/permissions";
 import { Permissions } from "../../shared/auth/authEnums";
 import { listProjects } from "../../features/projects/api/projectService";
+import { RoleSelect } from "../../shared/ui/RoleSelect";
+import { EmptyState } from "../../shared/components/EmptyState";
 import {
   getEndpointPerformance,
   getEndpointTrends,
@@ -43,6 +45,10 @@ const defaultFilters = Object.freeze({
 });
 
 const environmentOptions = ["all", "development", "staging", "production"];
+const environmentSelectOptions = environmentOptions.map((environment) => ({
+  value: environment,
+  label: environment === "all" ? "All environments" : environment,
+}));
 
 export function PerformancePage() {
   const { session, signOut } = useAuth();
@@ -84,6 +90,17 @@ export function PerformancePage() {
   );
 
   const totalSummary = useMemo(() => summarizeEndpoints(endpoints), [endpoints]);
+
+  const projectFilterOptions = useMemo(
+    () => [
+      { value: "all", label: "All projects" },
+      ...projects.map((project) => ({
+        value: project.id ?? project._id,
+        label: project.name,
+      })),
+    ],
+    [projects],
+  );
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -216,49 +233,25 @@ export function PerformancePage() {
               Compare endpoint latency, request volume, errors, and slow traces.
             </p>
           </div>
-          <button
-            className="ghost-button performance-refresh"
-            type="button"
-            onClick={fetchEndpoints}
-            disabled={isLoading}
-          >
-            <FiRefreshCw />
-            Refresh
-          </button>
         </header>
 
         <section className="performance-filters" aria-label="Performance filters">
-          <label className="performance-filter-field">
+          <div className="performance-filter-field">
             <span>Project</span>
-            <select
-              className="input"
+            <RoleSelect
               value={filters.projectId}
-              onChange={(event) => updateFilter("projectId", event.target.value)}
-            >
-              <option value="all">All projects</option>
-              {projects.map((project) => (
-                <option key={project.id ?? project._id} value={project.id ?? project._id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="performance-filter-field">
+              options={projectFilterOptions}
+              onValueChange={(value) => updateFilter("projectId", value)}
+            />
+          </div>
+          <div className="performance-filter-field">
             <span>Environment</span>
-            <select
-              className="input"
+            <RoleSelect
               value={filters.environment}
-              onChange={(event) =>
-                updateFilter("environment", event.target.value)
-              }
-            >
-              {environmentOptions.map((environment) => (
-                <option key={environment} value={environment}>
-                  {environment === "all" ? "All environments" : environment}
-                </option>
-              ))}
-            </select>
-          </label>
+              options={environmentSelectOptions}
+              onValueChange={(value) => updateFilter("environment", value)}
+            />
+          </div>
           <label className="performance-filter-field">
             <span>Release</span>
             <input
@@ -303,60 +296,71 @@ export function PerformancePage() {
           </button>
         </section>
 
-        <section className="performance-summary-grid">
-          <MetricCard
-            icon={<FiDatabase />}
-            label="Endpoints"
-            value={formatNumber(endpoints.length)}
+        {isLoading ? (
+          <div className="performance-state">Loading performance data...</div>
+        ) : endpoints.length === 0 ? (
+          <EmptyState
+            icon={FiActivity}
+            title="No performance data yet"
+            description="Once your connected projects report transactions, endpoint latency, throughput, and error rates will show up here. If you've set a project, environment, release, or date filter above, try clearing it."
           />
-          <MetricCard
-            icon={<FiClock />}
-            label="Avg latency"
-            value={formatMs(totalSummary.averageDurationMs)}
-          />
-          <MetricCard
-            icon={<FiTrendingUp />}
-            label="p95 latency"
-            value={formatMs(totalSummary.p95DurationMs)}
-          />
-          <MetricCard
-            icon={<FiAlertTriangle />}
-            label="Error rate"
-            value={`${formatNumber(totalSummary.errorRate)}%`}
-          />
-          <MetricCard
-            icon={<FiZap />}
-            label="Slow requests"
-            value={formatNumber(totalSummary.slowRequestCount)}
-          />
-        </section>
+        ) : (
+          <>
+            <section className="performance-summary-grid">
+              <MetricCard
+                icon={<FiDatabase />}
+                label="Endpoints"
+                value={formatNumber(endpoints.length)}
+              />
+              <MetricCard
+                icon={<FiClock />}
+                label="Avg latency"
+                value={formatMs(totalSummary.averageDurationMs)}
+              />
+              <MetricCard
+                icon={<FiTrendingUp />}
+                label="p95 latency"
+                value={formatMs(totalSummary.p95DurationMs)}
+              />
+              <MetricCard
+                icon={<FiAlertTriangle />}
+                label="Error rate"
+                value={`${formatNumber(totalSummary.errorRate)}%`}
+              />
+              <MetricCard
+                icon={<FiZap />}
+                label="Slow requests"
+                value={formatNumber(totalSummary.slowRequestCount)}
+              />
+            </section>
 
-        <section className="performance-grid">
-          <div className="performance-panel performance-endpoints-panel">
-            <div className="performance-panel-heading">
-              <div>
-                <h2>Endpoints</h2>
-                <span>{isLoading ? "Loading" : `${endpoints.length} routes`}</span>
+            <section className="performance-grid">
+              <div className="performance-panel performance-endpoints-panel">
+                <div className="performance-panel-heading">
+                  <div>
+                    <h2>Endpoints</h2>
+                    <span>{endpoints.length} routes</span>
+                  </div>
+                </div>
+                <EndpointTable
+                  endpoints={endpoints}
+                  selectedEndpointId={selectedEndpoint?.endpointId}
+                  onSelect={setSelectedEndpointId}
+                />
               </div>
-            </div>
-            <EndpointTable
-              endpoints={endpoints}
-              isLoading={isLoading}
-              selectedEndpointId={selectedEndpoint?.endpointId}
-              onSelect={setSelectedEndpointId}
-            />
-          </div>
 
-          <div className="performance-detail-column">
-            <EndpointOverview
-              endpoint={selectedEndpoint}
-              detail={endpointDetail}
-              trends={endpointTrends}
-              trace={tracePreview}
-              isLoading={isDetailLoading}
-            />
-          </div>
-        </section>
+              <div className="performance-detail-column">
+                <EndpointOverview
+                  endpoint={selectedEndpoint}
+                  detail={endpointDetail}
+                  trends={endpointTrends}
+                  trace={tracePreview}
+                  isLoading={isDetailLoading}
+                />
+              </div>
+            </section>
+          </>
+        )}
       </main>
     </WorkspaceLayout>
   );
@@ -374,19 +378,7 @@ function MetricCard({ icon, label, value }) {
   );
 }
 
-function EndpointTable({ endpoints, isLoading, selectedEndpointId, onSelect }) {
-  if (isLoading) {
-    return <div className="performance-state">Loading endpoint metrics...</div>;
-  }
-
-  if (!endpoints.length) {
-    return (
-      <div className="performance-state">
-        No transaction data found for this filter.
-      </div>
-    );
-  }
-
+function EndpointTable({ endpoints, selectedEndpointId, onSelect }) {
   return (
     <div className="performance-table-wrap">
       <table className="performance-table">
@@ -437,14 +429,6 @@ function EndpointTable({ endpoints, isLoading, selectedEndpointId, onSelect }) {
 }
 
 function EndpointOverview({ endpoint, detail, trends, trace, isLoading }) {
-  if (!endpoint) {
-    return (
-      <div className="performance-panel">
-        <div className="performance-state">Select an endpoint to inspect.</div>
-      </div>
-    );
-  }
-
   const trendRows = trends?.trend ?? [];
   const comparison = trends?.comparison ?? {};
   const summary = detail?.summary ?? endpoint;

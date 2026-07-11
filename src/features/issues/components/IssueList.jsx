@@ -1,4 +1,6 @@
+import { FiAlertOctagon } from "react-icons/fi";
 import { Pagination } from "../../../shared/components/Pagination";
+import { EmptyState } from "../../../shared/components/EmptyState";
 import { IssueRow } from "./IssueRow";
 import { IssueTableHeader } from "./IssueTableHeader";
 
@@ -12,6 +14,18 @@ const IssueList = ({
   pagination,
   onPageChange,
 }) => {
+  if (!isLoading && issues.length === 0) {
+    return (
+      <section className="issue-list">
+        <EmptyState
+          icon={FiAlertOctagon}
+          title="No issues found"
+          description="No errors match the current filters, or your projects haven't reported any yet."
+        />
+      </section>
+    );
+  }
+
   return (
     <section className="issue-list">
       <div className="issue-table-wrap">
@@ -20,12 +34,7 @@ const IssueList = ({
           <tbody>
             {isLoading ? (
               <tr>
-                <td className="issue-table-state" colSpan="7">Loading issues...</td>
-              </tr>
-            ) : null}
-            {!isLoading && issues.length === 0 ? (
-              <tr>
-                <td className="issue-table-state" colSpan="7">No issues match this view.</td>
+                <td className="issue-table-state" colSpan="6">Loading issues...</td>
               </tr>
             ) : null}
             {!isLoading

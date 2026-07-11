@@ -1,12 +1,9 @@
 import { useState } from "react";
-import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import {
   FiCopy,
   FiEye,
   FiEyeOff,
-  FiEdit2,
-  FiTrash2,
   FiCheck,
   FiCalendar,
   FiGlobe,
@@ -17,15 +14,9 @@ import {
 import { getDSN } from "../api/projectService";
 import { getApiError } from "../../../shared/api/errors";
 import { useToast } from "../../../shared/components/useToast";
+import { ConfirmProjectAction } from "./ConfirmProjectAction";
 
-const ProjectRow = ({
-  project,
-  onProjectUpdate,
-  onDeleteProject,
-  onRegenerateDSN,
-  canUpdate,
-  canDelete,
-}) => {
+const ProjectRow = ({ project, onRegenerateDSN }) => {
   const [showDSN, setShowDSN] = useState(false);
   const [copied, setCopied] = useState(false);
   const [DSN, setDSN] = useState("");
@@ -221,35 +212,6 @@ const ProjectRow = ({
           className="project-dsn-input"
         />
       </div>
-
-      {(canUpdate || canDelete) && (
-        <div className="project-detail-actions">
-          {canUpdate && (
-            <button
-              onClick={() => onProjectUpdate(projectId)}
-              className="secondary-button"
-              type="button"
-            >
-              <FiEdit2 />
-              Edit
-            </button>
-          )}
-
-          {canDelete && (
-            <ConfirmProjectAction
-              title="Are you sure?"
-              description={`This will archive ${project.name}.`}
-              actionLabel="Delete"
-              onConfirm={() => onDeleteProject(projectId)}
-            >
-              <button className="danger-button" type="button">
-                <FiTrash2 />
-                Delete
-              </button>
-            </ConfirmProjectAction>
-          )}
-        </div>
-      )}
     </div>
   );
 };
@@ -284,47 +246,6 @@ function formatProjectDateTime(value) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
-}
-
-function ConfirmProjectAction({
-  title,
-  description,
-  actionLabel,
-  onConfirm,
-  children,
-}) {
-  return (
-    <AlertDialog.Root>
-      <AlertDialog.Trigger asChild>{children}</AlertDialog.Trigger>
-      <AlertDialog.Portal>
-        <AlertDialog.Overlay className="dialog-overlay" />
-        <AlertDialog.Content className="dialog-content">
-          <AlertDialog.Title className="dialog-title">
-            {title}
-          </AlertDialog.Title>
-          <AlertDialog.Description className="dialog-description">
-            {description}
-          </AlertDialog.Description>
-          <div className="dialog-actions">
-            <AlertDialog.Cancel asChild>
-              <button className="secondary-button" type="button">
-                Cancel
-              </button>
-            </AlertDialog.Cancel>
-            <AlertDialog.Action asChild>
-              <button
-                className="danger-button"
-                type="button"
-                onClick={onConfirm}
-              >
-                {actionLabel}
-              </button>
-            </AlertDialog.Action>
-          </div>
-        </AlertDialog.Content>
-      </AlertDialog.Portal>
-    </AlertDialog.Root>
-  );
 }
 
 export default ProjectRow;

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Separator from "@radix-ui/react-separator";
 import * as Dialog from "@radix-ui/react-dialog";
-import { FiPlus, FiRefreshCw, FiX } from "react-icons/fi";
+import { FiPlus, FiX } from "react-icons/fi";
 import { WorkspaceLayout } from "../../shared/layouts/WorkspaceLayout";
 import { useAuth } from "../../shared/auth/useAuth";
 import { useToast } from "../../shared/components/useToast";
@@ -85,7 +85,7 @@ function AlertsPage() {
               Threshold or percent-change rules over issues, performance, logs, and monitors.
             </p>
           </div>
-          {canManage ? (
+          {canManage && rules.length > 0 ? (
             <button className="primary-button" type="button" onClick={() => setIsFormOpen(true)}>
               <FiPlus />
               New alert rule
@@ -128,15 +128,6 @@ function AlertsPage() {
               <p className="eyebrow">Directory</p>
               <h2>{rules.length} alert rules</h2>
             </div>
-            <button
-              className="icon-button"
-              type="button"
-              onClick={fetchRules}
-              aria-label="Refresh alert rules"
-              title="Refresh alert rules"
-            >
-              <FiRefreshCw />
-            </button>
           </div>
 
           <AlertRuleList
@@ -145,6 +136,7 @@ function AlertsPage() {
             canManage={canManage}
             onView={(rule) => navigate(`/workspace/alerts/${rule.id}`)}
             onDelete={handleDelete}
+            onCreate={() => setIsFormOpen(true)}
           />
         </section>
       </main>
