@@ -5,19 +5,22 @@ import {
   FiFileText,
   FiGrid,
   FiLogOut,
+  FiMenu,
   FiRadio,
   FiShield,
   FiUsers,
+  FiX,
 } from "react-icons/fi";
 import { GoProjectRoadmap } from "react-icons/go";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Roles } from "../auth/authEnums";
 import { getInitials } from "../utils/strings";
 
 export function WorkspaceLayout({ children, onSignOut }) {
   const { session } = useAuth();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const userRole = useMemo(
     () => session?.membership?.role || Roles.VIEWER,
@@ -28,15 +31,49 @@ export function WorkspaceLayout({ children, onSignOut }) {
     session?.membership?.role || session?.role || Roles.VIEWER;
   const profileOrganization = session?.organization?.name || "";
 
+  const closeDrawer = () => setDrawerOpen(false);
+
   return (
     <main className="workspace-shell">
-      <aside className="sidebar">
+      <header className="workspace-topbar">
+        <button
+          aria-expanded={drawerOpen}
+          aria-label="Open navigation"
+          className="ghost-button drawer-toggle"
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+        >
+          <FiMenu />
+        </button>
+        <div className="brand-row">
+          <span className="brand-mark small">
+            <FiShield />
+          </span>
+          <span>CrashLens</span>
+        </div>
+      </header>
+      {drawerOpen && (
+        <div
+          aria-hidden="true"
+          className="drawer-overlay"
+          onClick={closeDrawer}
+        />
+      )}
+      <aside className={`sidebar ${drawerOpen ? "open" : ""}`}>
         <div className="sidebar-top">
           <div className="brand-row">
             <span className="brand-mark small">
               <FiShield />
             </span>
             <span>CrashLens</span>
+            <button
+              aria-label="Close navigation"
+              className="ghost-button drawer-close"
+              type="button"
+              onClick={closeDrawer}
+            >
+              <FiX />
+            </button>
           </div>
           <nav className="nav-list" aria-label="Workspace navigation">
             <div className="nav-section">
@@ -46,6 +83,7 @@ export function WorkspaceLayout({ children, onSignOut }) {
                 className={getNavClassName}
                 title="Projects"
                 to="/workspace/projects"
+                onClick={closeDrawer}
               >
                 <GoProjectRoadmap />
                 <span className="nav-item-label">Projects</span>
@@ -56,6 +94,7 @@ export function WorkspaceLayout({ children, onSignOut }) {
                   className={getNavClassName}
                   title="Members"
                   to="/workspace/members"
+                  onClick={closeDrawer}
                 >
                   <FiUsers />
                   <span className="nav-item-label">Members</span>
@@ -71,6 +110,7 @@ export function WorkspaceLayout({ children, onSignOut }) {
                 end={false}
                 title="Issues"
                 to="/workspace/issues"
+                onClick={closeDrawer}
               >
                 <FiAlertOctagon />
                 <span className="nav-item-label">Issues</span>
@@ -80,6 +120,7 @@ export function WorkspaceLayout({ children, onSignOut }) {
                 className={getNavClassName}
                 title="Performance"
                 to="/workspace/performance"
+                onClick={closeDrawer}
               >
                 <FiActivity />
                 <span className="nav-item-label">Performance</span>
@@ -89,6 +130,7 @@ export function WorkspaceLayout({ children, onSignOut }) {
                 className={getNavClassName}
                 title="Logs"
                 to="/workspace/logs"
+                onClick={closeDrawer}
               >
                 <FiFileText />
                 <span className="nav-item-label">Logs</span>
@@ -99,6 +141,7 @@ export function WorkspaceLayout({ children, onSignOut }) {
                 end={false}
                 title="Monitors"
                 to="/workspace/monitors"
+                onClick={closeDrawer}
               >
                 <FiRadio />
                 <span className="nav-item-label">Monitors</span>
@@ -113,6 +156,7 @@ export function WorkspaceLayout({ children, onSignOut }) {
                 end={false}
                 title="Dashboards"
                 to="/workspace/dashboards"
+                onClick={closeDrawer}
               >
                 <FiGrid />
                 <span className="nav-item-label">Dashboards</span>
@@ -123,6 +167,7 @@ export function WorkspaceLayout({ children, onSignOut }) {
                 end={false}
                 title="Alerts"
                 to="/workspace/alerts"
+                onClick={closeDrawer}
               >
                 <FiBell />
                 <span className="nav-item-label">Alerts</span>
@@ -156,7 +201,10 @@ export function WorkspaceLayout({ children, onSignOut }) {
             className="ghost-button sidebar-signout"
             title="Sign out"
             type="button"
-            onClick={onSignOut}
+            onClick={() => {
+              closeDrawer();
+              onSignOut();
+            }}
           >
             <FiLogOut />
           </button>

@@ -612,6 +612,22 @@ textarea:focus-visible,
   color: var(--brand-orange-deep);
 }
 
+/* Mobile-only nav chrome. Hidden on desktop/tablet by default; shown inside
+   the <=760px media query below where the sidebar becomes an off-canvas
+   drawer. */
+.workspace-topbar {
+  display: none;
+}
+
+.drawer-toggle,
+.drawer-close {
+  display: none;
+}
+
+.drawer-overlay {
+  display: none;
+}
+
 .workspace-main {
   min-width: 0;
   min-height: 100vh;
@@ -784,6 +800,7 @@ textarea:focus-visible,
 .member-table-wrap {
   min-width: 0;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -1037,6 +1054,7 @@ textarea:focus-visible,
   min-width: 0;
   margin-top: 14px;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -1818,6 +1836,7 @@ textarea:focus-visible,
 .issue-table-wrap {
   min-width: 0;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -2329,6 +2348,7 @@ textarea:focus-visible,
   min-width: 0;
   max-height: 420px;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .performance-table {
@@ -3321,6 +3341,107 @@ textarea:focus-visible,
 }
 
 @media (max-width: 760px) {
+  /* Off-canvas nav: the sidebar leaves the grid flow and becomes a fixed,
+     slide-in drawer triggered by the topbar hamburger. */
+  .workspace-shell {
+    display: block;
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-strong);
+    padding: 10px 14px;
+    background: var(--app-surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .drawer-toggle {
+    display: inline-flex;
+    width: 38px;
+    min-height: 38px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .workspace-topbar .brand-row {
+    padding: 0;
+  }
+
+  .drawer-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: block;
+    background: rgba(23, 24, 28, 0.42);
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    width: min(280px, 84vw);
+    height: 100vh;
+    align-items: stretch;
+    padding: 18px 12px;
+    transform: translateX(-100%);
+    transition: transform 220ms ease-in-out;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Undo the icon-only rail collapse from the 980px breakpoint — the drawer
+     is a full panel, not a rail, so restore labels and left alignment. */
+  .sidebar .brand-row {
+    justify-content: flex-start;
+  }
+
+  .sidebar .brand-row > span:not(.brand-mark) {
+    display: inline;
+  }
+
+  .drawer-close {
+    display: inline-flex;
+    width: 30px;
+    min-height: 30px;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    padding: 0;
+  }
+
+  .sidebar .nav-section-label {
+    display: block;
+  }
+
+  .sidebar .nav-item {
+    width: 100%;
+    height: auto;
+    justify-content: flex-start;
+    padding: 0 10px;
+  }
+
+  .sidebar .nav-item span.nav-item-label {
+    display: inline;
+  }
+
+  .sidebar .sidebar-profile-copy {
+    display: grid;
+  }
+
+  .sidebar .sidebar-bottom {
+    justify-content: flex-start;
+  }
+
   .workspace-header,
   .panel-heading,
   .project-dialog-header {
@@ -3561,11 +3682,6 @@ textarea:focus-visible,
     padding: 20px 16px;
   }
 
-  .workspace-shell {
-    grid-template-columns: 72px minmax(0, 1fr);
-  }
-
-  .nav-item,
   .sidebar-signout {
     width: 44px;
     min-height: 44px;
