@@ -50,4 +50,20 @@ describe("LandingPage", () => {
     expect(screen.getByText(/performance monitoring & tracing/i)).toBeInTheDocument();
     expect(screen.getByText(/ai-assisted issue resolution/i)).toBeInTheDocument();
   });
+
+  it("marks AI-Assisted Issue Resolution as upcoming, not shipped", () => {
+    mockUseAuth.mockReturnValue({ isAuthenticated: false });
+
+    renderLanding();
+
+    expect(screen.getByText(/^upcoming$/i)).toBeInTheDocument();
+  });
+
+  it("still shows the decorative live issue stream", () => {
+    mockUseAuth.mockReturnValue({ isAuthenticated: false });
+
+    renderLanding();
+
+    expect(screen.getByText(/live issue stream/i)).toBeInTheDocument();
+  });
 });

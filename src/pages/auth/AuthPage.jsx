@@ -7,6 +7,11 @@ export function AuthPage() {
   return (
     <AuthLayout>
       <Tabs.Root defaultValue="login" className="tabs-root">
+        <div className="auth-card-heading">
+          <span className="auth-card-kicker">Your CrashLens workspace</span>
+          <h2>Welcome to clearer debugging</h2>
+          <p>Sign in or create an organization to start monitoring.</p>
+        </div>
         <Tabs.List className="tabs-list" aria-label="Authentication mode">
           <Tabs.Trigger className="tabs-trigger" value="login">
             Login
