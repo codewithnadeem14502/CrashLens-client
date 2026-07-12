@@ -11,7 +11,11 @@ import { hasPermission } from "../../shared/auth/permissions";
 import { Permissions } from "../../shared/auth/authEnums";
 import { ProjectFilterField } from "../../shared/components/ProjectFilterField";
 import { useProjectFilter } from "../../shared/projectFilter/useProjectFilter";
-import { createMonitor, deleteMonitor, listMonitors } from "../../features/monitors/api/monitorService";
+import {
+  createMonitor,
+  deleteMonitor,
+  listMonitors,
+} from "../../features/monitors/api/monitorService";
 import {
   createUptimeMonitor,
   deleteUptimeMonitor,
@@ -48,14 +52,20 @@ const defaultMonitorFilters = Object.freeze({
   environment: "all",
 });
 
-function MonitorsPage() {
+export function MonitorsPage() {
   const { session, signOut } = useAuth();
   const { notify } = useToast();
   const navigate = useNavigate();
   const { projects, selectedProjectId } = useProjectFilter();
 
-  const canView = useMemo(() => hasPermission(session, Permissions.MONITOR_VIEW), [session]);
-  const canManage = useMemo(() => hasPermission(session, Permissions.MONITOR_MANAGE), [session]);
+  const canView = useMemo(
+    () => hasPermission(session, Permissions.MONITOR_VIEW),
+    [session],
+  );
+  const canManage = useMemo(
+    () => hasPermission(session, Permissions.MONITOR_MANAGE),
+    [session],
+  );
 
   const [monitors, setMonitors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -76,8 +86,10 @@ function MonitorsPage() {
     const requestId = (latestRequestIdRef.current += 1);
     setIsLoading(true);
 
-    const projectId = selectedProjectId === "all" ? undefined : selectedProjectId;
-    const status = appliedFilters.status === "all" ? undefined : appliedFilters.status;
+    const projectId =
+      selectedProjectId === "all" ? undefined : selectedProjectId;
+    const status =
+      appliedFilters.status === "all" ? undefined : appliedFilters.status;
 
     try {
       const [cronResult, uptimeResult] = await Promise.all([
@@ -91,7 +103,10 @@ function MonitorsPage() {
 
       const combined = [
         ...cronResult.monitors.map((monitor) => ({ ...monitor, type: "cron" })),
-        ...uptimeResult.uptimeMonitors.map((monitor) => ({ ...monitor, type: "uptime" })),
+        ...uptimeResult.uptimeMonitors.map((monitor) => ({
+          ...monitor,
+          type: "uptime",
+        })),
       ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
       setMonitors(combined);
@@ -100,13 +115,23 @@ function MonitorsPage() {
         return;
       }
 
-      notify({ title: "Could not load monitors", description: getApiError(error), tone: "danger" });
+      notify({
+        title: "Could not load monitors",
+        description: getApiError(error),
+        tone: "danger",
+      });
     } finally {
       if (requestId === latestRequestIdRef.current) {
         setIsLoading(false);
       }
     }
-  }, [session.organizationId, canView, notify, selectedProjectId, appliedFilters.status]);
+  }, [
+    session.organizationId,
+    canView,
+    notify,
+    selectedProjectId,
+    appliedFilters.status,
+  ]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -122,8 +147,10 @@ function MonitorsPage() {
 
     return monitors.filter(
       (monitor) =>
-        (appliedFilters.type === "all" || monitor.type === appliedFilters.type) &&
-        (appliedFilters.environment === "all" || monitor.environment === appliedFilters.environment) &&
+        (appliedFilters.type === "all" ||
+          monitor.type === appliedFilters.type) &&
+        (appliedFilters.environment === "all" ||
+          monitor.environment === appliedFilters.environment) &&
         (!needle || monitor.name?.toLowerCase().includes(needle)),
     );
   }, [monitors, appliedFilters.type, appliedFilters.environment, searchQuery]);
@@ -148,9 +175,17 @@ function MonitorsPage() {
       const response = await createMonitor(payload);
       await fetchMonitors();
       setIssuedCheckToken(response?.data?.checkToken ?? null);
-      notify({ title: "Monitor created", description: response.message, tone: "success" });
+      notify({
+        title: "Monitor created",
+        description: response.message,
+        tone: "success",
+      });
     } catch (error) {
-      notify({ title: "Could not create monitor", description: getApiError(error), tone: "danger" });
+      notify({
+        title: "Could not create monitor",
+        description: getApiError(error),
+        tone: "danger",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -162,7 +197,11 @@ function MonitorsPage() {
     try {
       const response = await createUptimeMonitor(payload);
       await fetchMonitors();
-      notify({ title: "Uptime monitor created", description: response.message, tone: "success" });
+      notify({
+        title: "Uptime monitor created",
+        description: response.message,
+        tone: "success",
+      });
       closeForm();
     } catch (error) {
       notify({
@@ -182,9 +221,17 @@ function MonitorsPage() {
           ? await deleteMonitor(monitor.id ?? monitor._id)
           : await deleteUptimeMonitor(monitor.id ?? monitor._id);
       await fetchMonitors();
-      notify({ title: "Monitor deleted", description: response.message, tone: "success" });
+      notify({
+        title: "Monitor deleted",
+        description: response.message,
+        tone: "success",
+      });
     } catch (error) {
-      notify({ title: "Could not delete monitor", description: getApiError(error), tone: "danger" });
+      notify({
+        title: "Could not delete monitor",
+        description: getApiError(error),
+        tone: "danger",
+      });
     }
   };
 
@@ -201,17 +248,26 @@ function MonitorsPage() {
             <p className="eyebrow">Monitors</p>
             <h1>Cron &amp; uptime monitoring</h1>
             <p className="muted">
-              Track scheduled job check-ins and HTTP endpoint availability in one place.
+              Track scheduled job check-ins and HTTP endpoint availability in
+              one place.
             </p>
           </div>
 
           {canManage && monitors.length > 0 ? (
             <div className="header-actions">
-              <button className="secondary-button" type="button" onClick={() => setOpenForm("cron")}>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => setOpenForm("cron")}
+              >
                 <FiPlus />
                 Cron monitor
               </button>
-              <button className="primary-button" type="button" onClick={() => setOpenForm("uptime")}>
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => setOpenForm("uptime")}
+              >
                 <FiPlus />
                 Uptime monitor
               </button>
@@ -219,7 +275,10 @@ function MonitorsPage() {
           ) : null}
         </header>
 
-        <Dialog.Root open={openForm !== null} onOpenChange={(open) => (open ? null : closeForm())}>
+        <Dialog.Root
+          open={openForm !== null}
+          onOpenChange={(open) => (open ? null : closeForm())}
+        >
           <Dialog.Portal>
             <Dialog.Overlay className="project-dialog-overlay" />
             <Dialog.Content className="project-dialog-content">
@@ -227,11 +286,19 @@ function MonitorsPage() {
                 <div>
                   <p className="eyebrow">Create</p>
                   <Dialog.Title asChild>
-                    <h2>{openForm === "cron" ? "Add a cron monitor" : "Add an uptime monitor"}</h2>
+                    <h2>
+                      {openForm === "cron"
+                        ? "Add a cron monitor"
+                        : "Add an uptime monitor"}
+                    </h2>
                   </Dialog.Title>
                 </div>
                 <Dialog.Close asChild>
-                  <button className="icon-button" type="button" aria-label="Close">
+                  <button
+                    className="icon-button"
+                    type="button"
+                    aria-label="Close"
+                  >
                     <FiX />
                   </button>
                 </Dialog.Close>
@@ -244,7 +311,11 @@ function MonitorsPage() {
                   <>
                     <CheckTokenCallout checkToken={issuedCheckToken} />
                     <div className="form-actions project-dialog-footer">
-                      <button className="primary-button" type="button" onClick={closeForm}>
+                      <button
+                        className="primary-button"
+                        type="button"
+                        onClick={closeForm}
+                      >
                         Done
                       </button>
                     </div>
