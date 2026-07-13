@@ -4838,3 +4838,362 @@ textarea:focus-visible,
     padding: 0 13px;
   }
 }
+
+/* ---------------------------------------------------------------------- */
+/* Engineering page                                                       */
+/* ---------------------------------------------------------------------- */
+
+.engineering-page {
+  min-width: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px;
+}
+
+.engineering-panel {
+  height: auto;
+  overflow-x: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.engineering-panel .panel-heading {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.engineering-panel .panel-heading h2 {
+  margin: 0;
+}
+
+/* Feature overview */
+
+.engineering-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.engineering-feature-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.engineering-feature-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.engineering-feature-card .muted {
+  font-size: 0.82rem;
+}
+
+.engineering-owner {
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+}
+
+/* Workflow diagram */
+
+.engineering-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.engineering-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+}
+
+.engineering-legend-swatch {
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--brand-orange);
+}
+
+.engineering-legend-item.async .engineering-legend-swatch {
+  background: repeating-linear-gradient(
+    to right,
+    var(--accent-soft) 0,
+    var(--accent-soft) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.engineering-flow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.engineering-flow-step {
+  display: flex;
+  flex-direction: column;
+}
+
+.engineering-flow-node {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: default;
+}
+
+.engineering-flow-node:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.engineering-flow-node strong {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.engineering-flow-node .muted {
+  font-size: 0.78rem;
+}
+
+.engineering-flow-connector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+}
+
+.engineering-flow-connector.async {
+  font-style: italic;
+}
+
+.engineering-flow-arrow {
+  color: var(--accent-primary);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.engineering-flow-arrow-right {
+  display: none;
+}
+
+.engineering-flow-connector-label {
+  white-space: normal;
+}
+
+.engineering-supporting-flows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.engineering-supporting-flows h3 {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.engineering-flow-detail {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 10px 14px;
+}
+
+.engineering-flow-detail summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.engineering-flow-detail ol {
+  margin: 10px 0 2px;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.engineering-flow-detail li {
+  color: var(--text-soft);
+  font-size: 0.84rem;
+}
+
+/* Tooltip (Radix) */
+
+.engineering-tooltip-content {
+  max-width: 260px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.engineering-tooltip-arrow {
+  fill: var(--surface-soft);
+}
+
+/* Packages */
+
+.engineering-package-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.engineering-package-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 12px;
+  background: var(--surface-soft);
+  color: var(--text-soft);
+  font-family: var(--font-code);
+  font-size: 0.78rem;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.engineering-package-chip:hover,
+.engineering-package-chip:focus-visible {
+  background: var(--orange-soft);
+  color: var(--brand-orange-deep);
+}
+
+/* Code sample */
+
+.engineering-code-block + .engineering-code-block {
+  margin-top: 4px;
+}
+
+.engineering-code-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.engineering-code-block .stack-trace {
+  margin: 0;
+}
+
+/* Tech stack */
+
+.engineering-stack-grid {
+  columns: 4 240px;
+  column-gap: 16px;
+}
+
+.engineering-stack-group {
+  break-inside: avoid;
+  margin-bottom: 16px;
+}
+
+.engineering-stack-group h3 {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.engineering-stack-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.engineering-stack-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.engineering-stack-list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.engineering-stack-list strong {
+  font-size: 0.84rem;
+  color: var(--text);
+}
+
+.engineering-stack-list .muted {
+  font-size: 0.78rem;
+}
+
+@media (min-width: 760px) {
+  .engineering-flow {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .engineering-flow-step {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .engineering-flow-node {
+    width: 190px;
+  }
+
+  .engineering-flow-connector {
+    flex-direction: column;
+    justify-content: center;
+    width: 90px;
+    text-align: center;
+  }
+
+  .engineering-flow-arrow-down {
+    display: none;
+  }
+
+  .engineering-flow-arrow-right {
+    display: inline;
+  }
+}
+
+@media (max-width: 760px) {
+  .engineering-page {
+    padding: 18px;
+  }
+}

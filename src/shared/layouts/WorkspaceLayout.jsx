@@ -2,6 +2,7 @@ import {
   FiActivity,
   FiAlertOctagon,
   FiBell,
+  FiBookOpen,
   FiFileText,
   FiGrid,
   FiLogOut,
@@ -171,6 +172,20 @@ export function WorkspaceLayout({ children, onSignOut }) {
               >
                 <FiBell />
                 <span className="nav-item-label">Alerts</span>
+              </NavLink>
+            </div>
+
+            <div className="nav-section">
+              <span className="nav-section-label">Reference</span>
+              <NavLink
+                aria-label="Engineering"
+                className={getNavClassName}
+                title="Engineering"
+                to="/workspace/engineering"
+                onClick={closeDrawer}
+              >
+                <FiBookOpen />
+                <span className="nav-item-label">Engineering</span>
               </NavLink>
             </div>
           </nav>

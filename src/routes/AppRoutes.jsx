@@ -15,6 +15,7 @@ import DashboardsPage from "../pages/dashboards/DashboardsPage";
 import DashboardDetailPage from "../pages/dashboards/DashboardDetailPage";
 import AlertsPage from "../pages/alerts/AlertsPage";
 import AlertRuleDetailPage from "../pages/alerts/AlertRuleDetailPage";
+import { EngineeringPage } from "../pages/engineering/EngineeringPage";
 import { ProtectedRoute } from "./ProtectedRoute";
 
 export function AppRoutes() {
@@ -139,6 +140,9 @@ export function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      {/* Public reference page - deliberately not wrapped in ProtectedRoute,
+          see EngineeringPage.jsx's own header comment. */}
+      <Route path="/workspace/engineering" element={<EngineeringPage />} />
       <Route path="*" element={<Navigate to={homePath} replace />} />
     </Routes>
   );
