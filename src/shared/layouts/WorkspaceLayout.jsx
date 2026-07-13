@@ -162,7 +162,7 @@ export function WorkspaceLayout({ children, onSignOut }) {
                 <FiGrid />
                 <span className="nav-item-label">Dashboards</span>
               </NavLink>
-              <NavLink
+              {/* <NavLink
                 aria-label="Alerts"
                 className={getNavClassName}
                 end={false}
@@ -172,7 +172,7 @@ export function WorkspaceLayout({ children, onSignOut }) {
               >
                 <FiBell />
                 <span className="nav-item-label">Alerts</span>
-              </NavLink>
+              </NavLink> */}
             </div>
 
             <div className="nav-section">
@@ -207,7 +207,9 @@ export function WorkspaceLayout({ children, onSignOut }) {
               <strong>{profileName}</strong>
               <span>{formatRole(profileRole)}</span>
               {profileOrganization ? (
-                <span className="sidebar-profile-org">{profileOrganization}</span>
+                <span className="sidebar-profile-org">
+                  {profileOrganization}
+                </span>
               ) : null}
             </div>
           </div>
